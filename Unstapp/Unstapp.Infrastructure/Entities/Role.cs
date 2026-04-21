@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Unstapp.Infrastructure.Entities
 {
-    internal class Role
+    public class Role
     {
         public int RoleId { get; set; }
         public string Name { get; set; } = null!;

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Unstapp.Infrastructure.Entities
 {
-    internal class Comment
+    public class Comment
     {
         public int CommentId { get; set; }
         public int PostId { get; set; }

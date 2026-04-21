@@ -1,6 +1,6 @@
 ﻿namespace Unstapp.Infrastructure.Entities
 {
-    internal class User
+    public class User
     {
         public int UserId {  get; set; }
         public string Name { get; set; } = null!;

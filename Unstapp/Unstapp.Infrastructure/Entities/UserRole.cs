@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Unstapp.Infrastructure.Entities
 {
-    internal class UserRole
+    public class UserRole
     {
         public int UserRoleId {  get; set; }
         public int UserId { get; set; }
