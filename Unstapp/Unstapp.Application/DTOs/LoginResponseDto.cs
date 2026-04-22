@@ -11,5 +11,7 @@ namespace Unstapp.Application.DTOs
         public int UserId { get; set; }
         public string FullName { get; set; } = null!;
         public List<string> Roles { get; set; } = new();
+        public string Token { get; set; } = null!;
+        public DateTime ExpiresAt { get; set; }
     }
 }

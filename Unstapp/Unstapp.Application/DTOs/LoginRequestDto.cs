@@ -8,7 +8,7 @@ namespace Unstapp.Application.DTOs
 {
     public class LoginRequestDto
     {
-        public string Dni { get; set; } = null!;
+        public string DNI { get; set; } = null!;
         public string Password { get; set; } = null!;
     }
 }
