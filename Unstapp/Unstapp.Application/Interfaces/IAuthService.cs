@@ -10,5 +10,6 @@ namespace Unstapp.Application.Interfaces
     public interface IAuthService
     {
         Task<LoginResponseDto?> LoginAsync(LoginRequestDto dto);
+        Task RegisterAsync(RegisterRequestDto dto);
     }
 }

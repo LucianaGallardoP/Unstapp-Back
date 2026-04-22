@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Unstapp.Application.Interfaces;
+using Unstapp.Application.Services;
 using Unstapp.Infrastructure.Data;
+using Unstapp.Infrastructure.Interfaces;
+using Unstapp.Infrastructure.Repositories;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +17,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
