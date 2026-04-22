@@ -85,6 +85,20 @@ if(!string.IsNullOrWhiteSpace(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 }
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+        .WithOrigins(
+            "http://localhost:5173",
+            "https://localhost:5173"
+            )
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -99,6 +113,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("FrontendPolicy");
 
 app.UseHttpsRedirection();
 
