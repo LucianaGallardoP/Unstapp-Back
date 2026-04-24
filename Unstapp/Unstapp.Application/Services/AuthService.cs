@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
@@ -12,12 +13,18 @@ namespace Unstapp.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly IJwtService _jwtService;
+        private readonly IConfiguration _config;
 
-        public AuthService(IUserRepository userRepository, IMapper mapper, IJwtService jwtService)
+        public AuthService(
+            IUserRepository userRepository,
+            IMapper mapper,
+            IJwtService jwtService,
+            IConfiguration config)
         {
             _userRepository = userRepository;
             _mapper = mapper;
             _jwtService = jwtService;
+            _config = config;
         }
 
         public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto dto)
@@ -37,13 +44,15 @@ namespace Unstapp.Application.Services
 
             var token = _jwtService.GenerateToken(user.UserId, user.DNI, roles);
 
+            var expiresInMinutes = int.Parse(_config["Jwt:ExpiresInMinutes"] ?? "60");
+
             return new LoginResponseDto
             {
                 UserId = user.UserId,
                 FullName = $"{user.Name} {user.LastName}",
                 Roles = roles,
                 Token = token,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(60),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(expiresInMinutes),
             };
         }
 
