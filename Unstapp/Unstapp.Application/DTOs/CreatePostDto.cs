@@ -8,8 +8,8 @@ namespace Unstapp.Application.DTOs
 {
     public class CreatePostDto
     {
-        public int UserId { get; set; }
         public int? SubjectId { get; set; }
         public string Content { get; set; } = null!;
+        public string? MediaUrl { get; set; }
     }
 }

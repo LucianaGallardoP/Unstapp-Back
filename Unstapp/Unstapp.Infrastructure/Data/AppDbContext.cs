@@ -60,7 +60,7 @@ namespace Unstapp.Infrastructure.Data
             {
                 entity.HasKey(e => e.PostId);
                 entity.Property(e => e.Content).IsRequired();
-                entity.Property(e => e.PostDate).IsRequired();
+                entity.Property(e => e.PostDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasOne(e => e.User)
                 .WithMany(u => u.Posts)
