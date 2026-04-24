@@ -11,7 +11,7 @@ using Unstapp.Infrastructure.Interfaces;
 
 namespace Unstapp.Application.Services
 {
-    internal class PostService : IPostService
+    public class PostService : IPostService
     {
         private readonly IPostRepository _postRepository;
         private readonly IMapper _mapper;
