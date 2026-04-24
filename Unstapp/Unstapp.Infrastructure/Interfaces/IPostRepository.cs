@@ -10,7 +10,7 @@ namespace Unstapp.Infrastructure.Interfaces
     public interface IPostRepository
     {
         Task AddAsync(Post post);
-        Task<Post?> GetByIdWithRelations(int postId);
-        Task<List<Post>> GetAllWithRelations();
+        Task<Post?> GetByIdWithRelationsAsync(int postId);
+        Task<List<Post>> GetAllWithRelationsAsync();
     }
 }
