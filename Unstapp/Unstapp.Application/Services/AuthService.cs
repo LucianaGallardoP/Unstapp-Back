@@ -22,7 +22,10 @@ namespace Unstapp.Application.Services
 
         public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto dto)
         {
-            var user = await _userRepository.GetByDniAsync(dto.DNI);
+
+            var dni = dto.DNI.Trim();
+
+            var user = await _userRepository.GetByDniAsync(dni);
 
             if(user == null) return null;
 
