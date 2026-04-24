@@ -7,7 +7,7 @@ using Unstapp.Infrastructure.Entities;
 
 namespace Unstapp.Infrastructure.Interfaces
 {
-    internal interface IPostRepository
+    public interface IPostRepository
     {
         Task AddAsync(Post post);
         Task<Post?> GetByIdWithRelations(int postId);
