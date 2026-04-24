@@ -22,7 +22,7 @@ namespace Unstapp.API.Controllers
 
             if (result == null)
             {
-                return Unauthorized("Usuario o Contraseña Incorrectos");
+                return Unauthorized(new { message = "Usuario o Contraseña Incorrectos." });
             }
 
             return Ok(result);
