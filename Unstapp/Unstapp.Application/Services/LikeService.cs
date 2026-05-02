@@ -40,7 +40,11 @@ namespace Unstapp.Application.Services
                 UserId = userId
             };
 
-            await _likeRepository.AddAsync(like);
+            var created = await _likeRepository.AddAsync(like);
+
+            if(!created)
+                return ToggleLikeResult.DuplicateLike;
+
             return ToggleLikeResult.Liked;
         }
     }

@@ -10,6 +10,7 @@ namespace Unstapp.Application.DTOs
     {
         Liked,
         Unliked,
-        PostNotFound
+        PostNotFound,
+        DuplicateLike
     }
 }

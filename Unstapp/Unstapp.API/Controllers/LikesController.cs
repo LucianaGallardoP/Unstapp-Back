@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using System.Security.Claims;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
@@ -37,6 +38,11 @@ namespace Unstapp.API.Controllers
             {
                 ToggleLikeResult.PostNotFound => NotFound(new { message = "La publicación no existe." }),
 
+                ToggleLikeResult.DuplicateLike => Conflict(new
+                {
+                    message = "El usuario ya le dio like a esta publicación."
+                }),
+
                 ToggleLikeResult.Liked => Ok(new
                 {
                     message = "Like agregado correctamente.",
@@ -51,7 +57,6 @@ namespace Unstapp.API.Controllers
 
                 _ => StatusCode(500, new { message = "Error inesperado" })
             };
-
         }
     }
 }

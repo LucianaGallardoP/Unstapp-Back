@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,10 +26,19 @@ namespace Unstapp.Infrastructure.Repositories
                 .FirstOrDefaultAsync(l => l.PostId == postId && l.UserId == userId);
         }
 
-        public async Task AddAsync(Like like)
+        public async Task<bool> AddAsync(Like like)
         {
-            await _context.Likes.AddAsync(like);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.Likes.AddAsync(like);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch(DbUpdateException ex)
+                when(ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+            {
+                return false;
+            }
         }
 
         public async Task<bool> PostExistsAsync(int postId)

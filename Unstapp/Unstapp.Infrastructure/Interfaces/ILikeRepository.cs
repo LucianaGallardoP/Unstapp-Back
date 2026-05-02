@@ -10,7 +10,7 @@ namespace Unstapp.Infrastructure.Interfaces
     public interface ILikeRepository
     {
         Task<Like?> GetByPostAndUserAsync(int postId, int userId);
-        Task AddAsync(Like like);
+        Task<bool> AddAsync(Like like);
         Task<bool> PostExistsAsync(int postId);
         Task RemoveAsync(Like like);
     }
