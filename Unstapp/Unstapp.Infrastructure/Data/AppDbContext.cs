@@ -44,14 +44,14 @@ namespace Unstapp.Infrastructure.Data
                 entity.HasKey(e => e.UserRoleId);
 
                 entity.HasOne(e => e.User)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany(u => u.UserRoles)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.Role)
-                .WithMany(r => r.UserRoles)
-                .HasForeignKey(e => e.RoleId)
-                .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany(r => r.UserRoles)
+                    .HasForeignKey(e => e.RoleId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(e => new { e.UserId, e.RoleId }).IsUnique();
             });
@@ -63,9 +63,9 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(e => e.PostDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasOne(e => e.User)
-                .WithMany(u => u.Posts)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany(u => u.Posts)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<Comment>(entity =>
@@ -74,14 +74,14 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(e => e.Content).IsRequired();
 
                 entity.HasOne(e => e.Post)
-                .WithMany(p => p.Comments)
-                .HasForeignKey(e => e.PostId)
-                .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany(p => p.Comments)
+                    .HasForeignKey(e => e.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.User)
-                .WithMany(u => u.Comments)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                    .WithMany(u => u.Comments)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<Like>(entity =>
@@ -89,14 +89,17 @@ namespace Unstapp.Infrastructure.Data
                 entity.HasKey(e => e.LikeId);
 
                 entity.HasOne(e => e.Post)
-                .WithMany(p => p.Likes)
-                .HasForeignKey(e => e.PostId)
-                .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany(p => p.Likes)
+                    .HasForeignKey(e => e.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.User)
-                .WithMany(u => u.Likes)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                    .WithMany(u => u.Likes)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new {e.PostId, e.UserId })
+                    .IsUnique();
             });
 
 
