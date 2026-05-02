@@ -16,5 +16,6 @@ namespace Unstapp.Application.DTOs
         public DateTime PostDate { get; set; }
         public int LikesCount { get; set; }
         public int CommentsCount { get; set; }
+        public bool isLikedByMe { get; set; } = false;
     }
 }
