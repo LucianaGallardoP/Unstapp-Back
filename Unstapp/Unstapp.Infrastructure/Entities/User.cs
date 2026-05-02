@@ -9,7 +9,7 @@
         public string Email { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;
         public string Password { get; set; } = null!;
-        public byte[]? Avatar { get; set; }
+        public string? AvatarUrl { get; set; }
         public string? Bio { get; set; }
         public bool FirstTime { get; set; } = true;
 

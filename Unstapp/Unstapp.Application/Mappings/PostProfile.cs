@@ -20,6 +20,8 @@ namespace Unstapp.Application.Mappings
             CreateMap<Post, PostDto>()
                 .ForMember(dest => dest.UserName,
                     opt => opt.MapFrom(src => $"{src.User.Name} {src.User.LastName}"))
+                .ForMember(dest => dest.UserAvatarUrl,
+                    opt => opt.MapFrom(src => src.User.AvatarUrl))
                 .ForMember(dest => dest.LikesCount,
                     opt => opt.MapFrom(src => src.Likes.Count))
                 .ForMember(dest => dest.CommentsCount,
