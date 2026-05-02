@@ -10,6 +10,6 @@ namespace Unstapp.Application.Interfaces
     public interface IPostService
     {
         Task<PostDto> CreateAsync(int userId, CreatePostDto dto);
-        Task<List<PostDto>> GetAllAsync();
+        Task<List<PostDto>> GetAllAsync(int currentUserId);
     }
 }

@@ -21,7 +21,16 @@ namespace Unstapp.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var posts = await _postService.GetAllAsync();
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userIdClaim))
+                return Unauthorized(new { message = "Token inválido." });
+
+            if(!int.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new { message = "Identificador de usuario inválido." });
+
+            var posts = await _postService.GetAllAsync(userId);
             return Ok(posts);
         }
 

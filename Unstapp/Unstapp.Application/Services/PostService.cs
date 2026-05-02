@@ -37,10 +37,22 @@ namespace Unstapp.Application.Services
             return _mapper.Map<PostDto>(createdPost!);
         }
 
-        public async Task<List<PostDto>> GetAllAsync()
+        public async Task<List<PostDto>> GetAllAsync(int currentUserId)
         {
             var posts = await _postRepository.GetAllWithRelationsAsync();
-            return _mapper.Map<List<PostDto>>(posts);
+
+            var postDtos = _mapper.Map<List<PostDto>>(posts);
+
+            foreach (var postDto in postDtos)
+            {
+                var post = posts.First(p => p.PostId == postDto.PostId);
+
+                postDto.LikesCount = post.Likes.Count();
+                postDto.CommentsCount = post.Comments.Count();
+                postDto.isLikedByMe = post.Likes.Any(l => l.UserId == currentUserId);
+            }
+
+            return postDtos;
         }
     }
 }
