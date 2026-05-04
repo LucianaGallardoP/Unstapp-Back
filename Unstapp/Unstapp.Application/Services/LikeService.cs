@@ -13,15 +13,17 @@ namespace Unstapp.Application.Services
     public class LikeService : ILikeService
     {
         private readonly ILikeRepository _likeRepository;
+        private readonly IPostRepository _postRepository;
 
-        public LikeService(ILikeRepository likeRepository)
+        public LikeService(ILikeRepository likeRepository, IPostRepository postRepository)
         {
             _likeRepository = likeRepository;
+            _postRepository = postRepository;
         }
 
         public async Task<ToggleLikeResult> ToggleLikeAsync(int postId, int userId)
         {
-            var postExists = await _likeRepository.PostExistsAsync(postId);
+            var postExists = await _postRepository.PostExistsAsync(postId);
 
             if (!postExists)
                 return ToggleLikeResult.PostNotFound;

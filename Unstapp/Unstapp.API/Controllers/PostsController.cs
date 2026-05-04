@@ -21,7 +21,6 @@ namespace Unstapp.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(userIdClaim))

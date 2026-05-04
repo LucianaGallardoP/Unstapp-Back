@@ -12,5 +12,7 @@ namespace Unstapp.Infrastructure.Interfaces
         Task AddAsync(Post post);
         Task<Post?> GetByIdWithRelationsAsync(int postId);
         Task<List<Post>> GetAllWithRelationsAsync();
+
+        Task<bool> PostExistsAsync(int postId);
     }
 }

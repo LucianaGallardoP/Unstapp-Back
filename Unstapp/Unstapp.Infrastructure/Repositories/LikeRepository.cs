@@ -41,11 +41,6 @@ namespace Unstapp.Infrastructure.Repositories
             }
         }
 
-        public async Task<bool> PostExistsAsync(int postId)
-        {
-            return await _context.Posts.AnyAsync(p => p.PostId == postId);
-        }
-
         public async Task RemoveAsync(Like like)
         {
             _context.Likes.Remove(like);

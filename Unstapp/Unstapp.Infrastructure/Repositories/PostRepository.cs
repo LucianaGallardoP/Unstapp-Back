@@ -43,5 +43,10 @@ namespace Unstapp.Infrastructure.Repositories
                 .OrderByDescending(p => p.PostDate)
                 .ToListAsync();
         }
+
+        public async Task<bool> PostExistsAsync(int postId)
+        {
+            return await _context.Posts.AnyAsync(p => p.PostId == postId);
+        }
     }
 }

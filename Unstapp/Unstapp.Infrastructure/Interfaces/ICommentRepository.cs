@@ -7,10 +7,8 @@ using Unstapp.Infrastructure.Entities;
 
 namespace Unstapp.Infrastructure.Interfaces
 {
-    public interface ILikeRepository
+    public interface ICommentRepository
     {
-        Task<Like?> GetByPostAndUserAsync(int postId, int userId);
-        Task<bool> AddAsync(Like like);
-        Task RemoveAsync(Like like);
+        public Task<List<Comment>> GetAllByPostWithRelationsAsync(int postId);
     }
 }
