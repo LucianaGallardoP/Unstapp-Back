@@ -71,7 +71,9 @@ namespace Unstapp.Infrastructure.Data
             modelBuilder.Entity<Comment>(entity =>
             {
                 entity.HasKey(e => e.CommentId);
-                entity.Property(e => e.Content).IsRequired();
+                entity.Property(e => e.Content)
+                    .IsRequired()
+                    .HasMaxLength(300);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasOne(e => e.Post)

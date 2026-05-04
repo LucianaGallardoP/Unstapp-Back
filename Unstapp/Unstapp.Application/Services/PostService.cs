@@ -23,9 +23,6 @@ namespace Unstapp.Application.Services
 
         public async Task<PostDto> CreateAsync(int userId, CreatePostDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Content))
-                throw new Exception("El contenido de la publicación es obligatorio.");
-
             var post = _mapper.Map<Post>(dto);
             post.UserId = userId;
             post.PostDate = DateTime.UtcNow;

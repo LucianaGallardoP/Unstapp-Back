@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
+using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
 
 namespace Unstapp.Application.Services
@@ -35,9 +36,30 @@ namespace Unstapp.Application.Services
 
             var comments = await _commentRepository.GetAllByPostWithRelationsAsync(postId);
 
-            var postDtos = _mapper.Map<List<CommentResponseDto>>(comments);
+            var commentDtos = _mapper.Map<List<CommentResponseDto>>(comments);
 
-            return postDtos;
+            return commentDtos;
+        }
+
+        public async Task<CommentResponseDto?> AddAsync(
+            int postId,
+            int userId,
+            CreateCommentDto dto)
+        {
+            var postExists = await _postRepository.PostExistsAsync(postId);
+            if (!postExists)
+                return null;
+
+            var comment = _mapper.Map<Comment>(dto);
+            comment.UserId = userId;
+            comment.PostId = postId;
+            comment.CreatedAt = DateTime.UtcNow;
+
+            await _commentRepository.AddAsync(comment);
+
+            var createdComment = await _commentRepository.GetByIdWithRelationsAsync(comment.CommentId);
+
+            return _mapper.Map<CommentResponseDto>(createdComment!);
         }
     }
 }

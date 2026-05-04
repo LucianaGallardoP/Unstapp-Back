@@ -18,6 +18,14 @@ namespace Unstapp.Application.Mappings
                     opt => opt.MapFrom(src => $"{src.User.Name} {src.User.LastName}"))
                 .ForMember(dest => dest.AvatarUrl,
                     opt => opt.MapFrom(src => src.User.AvatarUrl));
+
+            CreateMap<CreateCommentDto, Comment>()
+                .ForMember(dest => dest.CommentId, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.PostId, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Post, opt => opt.Ignore());
         }
     }
 }

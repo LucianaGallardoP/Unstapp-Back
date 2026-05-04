@@ -10,5 +10,6 @@ namespace Unstapp.Application.Interfaces
     public interface ICommentService
     {
         Task<List<CommentResponseDto>?> GetAllByPostAsync(int postId);
+        Task<CommentResponseDto?> AddAsync(int postId, int userId, CreateCommentDto dto);
     }
 }

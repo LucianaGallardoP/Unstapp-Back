@@ -27,5 +27,19 @@ namespace Unstapp.Infrastructure.Repositories
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
         }
+
+        public async Task AddAsync(Comment comment)
+        {
+            await _context.Comments.AddAsync(comment);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<Comment?> GetByIdWithRelationsAsync(int commentId)
+        {
+            return await _context.Comments
+                .Include(c => c.User)
+                .Include(c => c.Post)
+                .FirstOrDefaultAsync(c => c.CommentId == commentId);
+        }
     }
 }
