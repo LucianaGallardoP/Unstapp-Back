@@ -72,6 +72,7 @@ namespace Unstapp.Infrastructure.Data
             {
                 entity.HasKey(e => e.CommentId);
                 entity.Property(e => e.Content).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasOne(e => e.Post)
                     .WithMany(p => p.Comments)
