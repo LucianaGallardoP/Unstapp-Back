@@ -91,15 +91,16 @@ if(!string.IsNullOrWhiteSpace(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 }
 
+var allowedOrigins = builder.Configuration
+    .GetSection("AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
         policy
-        .WithOrigins(
-            "http://localhost:5173",
-            "https://localhost:5173"
-            )
+        .WithOrigins(allowedOrigins)
         .AllowAnyHeader()
         .AllowAnyMethod();
     });
@@ -124,6 +125,7 @@ app.UseCors("FrontendPolicy");
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
