@@ -38,17 +38,24 @@ namespace Unstapp.API.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromForm] CreatePostDto dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if(string.IsNullOrWhiteSpace(userIdClaim))
-                return Unauthorized(new { message = "Token Inválido." });
+                if (string.IsNullOrWhiteSpace(userIdClaim))
+                    return Unauthorized(new { message = "Token Inválido." });
 
-            if(!int.TryParse(userIdClaim, out var userId))
-                return Unauthorized(new { message = "Identificador de Usuario Inválido." });
+                if (!int.TryParse(userIdClaim, out var userId))
+                    return Unauthorized(new { message = "Identificador de Usuario Inválido." });
 
-            var post = await _postService.CreateAsync(userId, dto);
+                var post = await _postService.CreateAsync(userId, dto);
 
-            return Ok(post);
+                return Ok(post);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }
