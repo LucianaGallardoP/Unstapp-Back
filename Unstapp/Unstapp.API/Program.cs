@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -10,6 +9,8 @@ using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Infrastructure.Repositories;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using CloudinaryDotNet;
+using Unstapp.Infrastructure.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -75,6 +76,16 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+var cloudinaryAccount = new Account(
+    builder.Configuration["Cloudinary:CloudName"],
+    builder.Configuration["Cloudinary:ApiKey"],
+    builder.Configuration["Cloudinary:ApiSecret"]
+    );
+
+var cloudinary = new Cloudinary(cloudinaryAccount);
+
+builder.Services.AddSingleton(cloudinary);
+builder.Services.AddScoped<IMediaStorageService, CloudinaryMediaStorageService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -105,6 +116,8 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod();
     });
 });
+
+
 
 var app = builder.Build();
 

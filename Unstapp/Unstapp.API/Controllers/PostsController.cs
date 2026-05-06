@@ -36,7 +36,7 @@ namespace Unstapp.API.Controllers
 
         [Authorize]
         [HttpPost("create")]
-        public async Task<IActionResult> Create([FromBody] CreatePostDto dto)
+        public async Task<IActionResult> Create([FromForm] CreatePostDto dto)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 

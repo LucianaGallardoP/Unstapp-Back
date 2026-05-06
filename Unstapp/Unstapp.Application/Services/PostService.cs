@@ -15,17 +15,31 @@ namespace Unstapp.Application.Services
     {
         private readonly IPostRepository _postRepository;
         private readonly IMapper _mapper;
-        public PostService(IPostRepository postRepository, IMapper mapper)
+        private readonly IMediaStorageService _mediaStorageService;
+        public PostService(
+            IPostRepository postRepository,
+            IMapper mapper,
+            IMediaStorageService mediaStorageService)
         {
             _postRepository = postRepository;
             _mapper = mapper;
+            _mediaStorageService = mediaStorageService;
         }
 
         public async Task<PostDto> CreateAsync(int userId, CreatePostDto dto)
         {
+            string? mediaUrl = null;
+
+            if(dto.MediaFile != null)
+            {
+                mediaUrl = await _mediaStorageService
+                            .UploadPostMediaAsync(dto.MediaFile, userId);
+            }
+
             var post = _mapper.Map<Post>(dto);
             post.UserId = userId;
             post.PostDate = DateTime.UtcNow;
+            post.MediaUrl = mediaUrl;
 
             await _postRepository.AddAsync(post);
 

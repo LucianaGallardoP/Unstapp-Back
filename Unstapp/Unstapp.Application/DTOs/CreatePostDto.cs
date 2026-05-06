@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Unstapp.Application.DTOs
 {
@@ -15,7 +11,6 @@ namespace Unstapp.Application.DTOs
         [MaxLength(500, ErrorMessage = "El contenido del post no puede superar los 500 caracteres")]
         public string Content { get; set; } = null!;
 
-        [Url(ErrorMessage = "El enlace multimedia no es válido.")]
-        public string? MediaUrl { get; set; }
+        public IFormFile? MediaFile { get; set; }
     }
 }
