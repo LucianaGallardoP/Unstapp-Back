@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unstapp.Application.DTOs;
+using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.Application.Interfaces
 {
     public interface IPostService
     {
-        Task<PostDto> CreateAsync(int userId, CreatePostDto dto);
+        Task<ServiceResult<PostDto>> CreateAsync(int userId, CreatePostDto dto);
         Task<List<PostDto>> GetAllAsync(int currentUserId);
     }
 }

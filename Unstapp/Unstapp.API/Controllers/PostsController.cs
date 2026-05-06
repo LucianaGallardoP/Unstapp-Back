@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
+using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.API.Controllers
 {
@@ -23,11 +24,13 @@ namespace Unstapp.API.Controllers
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (string.IsNullOrWhiteSpace(userIdClaim))
-                return Unauthorized(new { message = "Token inválido." });
-
             if(!int.TryParse(userIdClaim, out var userId))
-                return Unauthorized(new { message = "Identificador de usuario inválido." });
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
 
             var posts = await _postService.GetAllAsync(userId);
             return Ok(posts);
@@ -42,15 +45,20 @@ namespace Unstapp.API.Controllers
             {
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                if (string.IsNullOrWhiteSpace(userIdClaim))
-                    return Unauthorized(new { message = "Token Inválido." });
-
                 if (!int.TryParse(userIdClaim, out var userId))
-                    return Unauthorized(new { message = "Identificador de Usuario Inválido." });
+                    return Unauthorized(new ApiErrorResponse
+                    {
+                        StatusCode = StatusCodes.Status401Unauthorized,
+                        Code = "INVALID_TOKEN",
+                        Message = "Token inválido."
+                    });
 
-                var post = await _postService.CreateAsync(userId, dto);
+                var result = await _postService.CreateAsync(userId, dto);
 
-                return Ok(post);
+                if (!result.Success)
+                    return StatusCode(result.Error!.StatusCode, result.Error);
+
+                return Ok(result.Data);
             }
             catch (Exception ex)
             {

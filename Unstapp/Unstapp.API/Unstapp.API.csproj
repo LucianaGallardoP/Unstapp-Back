@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Unstapp.Application\Unstapp.Application.csproj" />
     <ProjectReference Include="..\Unstapp.Infrastructure\Unstapp.Infrastructure.csproj" />
+    <ProjectReference Include="..\Unstapp.Shared\Unstapp.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

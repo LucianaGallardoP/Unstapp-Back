@@ -1,7 +1,8 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Http;
-using Unstapp.Application.Interfaces;
+using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Interfaces;
 
 namespace Unstapp.Infrastructure.Services
 {
@@ -31,10 +32,10 @@ namespace Unstapp.Infrastructure.Services
             _cloudinary = cloudinary;
         }
 
-        public async Task<string?> UploadPostMediaAsync(IFormFile file, int userId)
+        public async Task<ServiceResult<string?>> UploadPostMediaAsync(IFormFile file, int userId)
         {
             if (file == null || file.Length == 0)
-                return null;
+                return ServiceResult<string?>.Ok(null);
 
             var contentType = file.ContentType.ToLower();
 
@@ -42,13 +43,25 @@ namespace Unstapp.Infrastructure.Services
             var isVideo = _AllowedVideoTypes.Contains(contentType);
 
             if(!isImage && !isVideo)
-                throw new ArgumentException("Solo se permiten imagenes JPG, PNG, WEBP o videos MP4, WEBM, MOV.");
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_FILE_TYPE",
+                    "Solo se permiten imagenes JPG, PNG, WEBP o videos MP4, WEBM, MOV."
+                    );
 
             if (isImage && file.Length > MaxImageSize)
-                throw new ArgumentException("La imagen no puede superar los 5 MB.");
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "FILE_TOO_LARGE",
+                    "La imagen no puede superar los 5 MB."
+                    );
 
             if (isVideo && file.Length > MaxVideoSize)
-                throw new ArgumentException("El video no puede superar los 20 MB.");
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "FILE_TOO_LARGE",
+                    "El video no puede superar los 20 MB."
+                    );
 
             var uniqueId = Guid.NewGuid().ToString("N");
 
@@ -71,12 +84,15 @@ namespace Unstapp.Infrastructure.Services
                 var result = await _cloudinary.UploadAsync(uploadParams);
 
                 if (result.Error != null)
-                    throw new Exception(result.Error.Message);
+                    return ServiceResult<string?>.Fail(
+                        StatusCodes.Status500InternalServerError,
+                        "MEDIA_UPLOAD_FAILED",
+                        result.Error.Message
+                        );
 
-                return result.SecureUrl?.ToString();
+                return ServiceResult<string?>.Ok(result.SecureUrl?.ToString());
             }
-
-            if (isVideo)
+            else
             {
                 var uploadParams = new VideoUploadParams
                 {
@@ -89,26 +105,40 @@ namespace Unstapp.Infrastructure.Services
                 var result = await _cloudinary.UploadAsync(uploadParams);
 
                 if (result.Error != null)
-                    throw new Exception(result.Error.Message);
+                    return ServiceResult<string?>.Fail(
+                        StatusCodes.Status500InternalServerError,
+                        "MEDIA_UPLOAD_FAILED",
+                        result.Error.Message
+                        );
 
-                return result.SecureUrl?.ToString();
+                return ServiceResult<string?>.Ok(result.SecureUrl?.ToString());
             }
-
-            throw new ArgumentException("Solo se permiten imagenes o videos");
         }
 
-        public async Task<string?> UploadUserAvatarAsync(IFormFile file, int userId)
+        public async Task<ServiceResult<string?>> UploadUserAvatarAsync(IFormFile file, int userId)
         {
             if (file == null || file.Length == 0)
-                return null;
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "FILE_NULL",
+                    "Debe subir un archivo."
+                    );
 
             var contentType = file.ContentType.ToLower();
 
             if (!_AllowedImageTypes.Contains(contentType))
-                throw new ArgumentException("El avatar debe ser una imagen JPG, PNG o WEBP.");
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_FILE_TYPE",
+                    "La foto de perfil debe ser una imagen JPG, PNG o WEBP."
+                    );
 
             if (file.Length > MaxImageSize)
-                throw new ArgumentException("El avatar no puede superar los 5 MB.");
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "FILE_TOO_LARGE",
+                    "La foto de perfil no puede superar los 5 MB."
+                    );
 
             await using var stream = file.OpenReadStream();
 
@@ -131,9 +161,13 @@ namespace Unstapp.Infrastructure.Services
             var result = await _cloudinary.UploadAsync(uploadParams);
 
             if (result.Error != null)
-                throw new Exception(result.Error.Message);
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status500InternalServerError,
+                    "MEDIA_UPLOAD_FAILED",
+                    result.Error.Message
+                    );
 
-            return result.SecureUrl?.ToString();
+            return ServiceResult<string?>.Ok(result.SecureUrl?.ToString());
         }
     }
 }

@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using CloudinaryDotNet;
 using Unstapp.Infrastructure.Services;
+using Unstapp.Shared.Interfaces;
 
 
 var builder = WebApplication.CreateBuilder(args);
