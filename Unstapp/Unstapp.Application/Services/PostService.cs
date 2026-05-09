@@ -119,7 +119,8 @@ namespace Unstapp.Application.Services
 
             if(roles.Any(r =>
             r.Equals("Alumno", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Profesor", StringComparison.OrdinalIgnoreCase)))
+            r.Equals("Profesor", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("Docente", StringComparison.OrdinalIgnoreCase)))
             {
                 return PostCategory.General;
             }
