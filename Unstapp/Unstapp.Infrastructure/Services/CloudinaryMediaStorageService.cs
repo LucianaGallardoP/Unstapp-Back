@@ -44,7 +44,7 @@ namespace Unstapp.Infrastructure.Services
 
             if(!isImage && !isVideo)
                 return ServiceResult<string?>.Fail(
-                    StatusCodes.Status400BadRequest,
+                    StatusCodes.Status415UnsupportedMediaType,
                     "INVALID_FILE_TYPE",
                     "Solo se permiten imagenes JPG, PNG, WEBP o videos MP4, WEBM, MOV."
                     );
@@ -58,7 +58,7 @@ namespace Unstapp.Infrastructure.Services
 
             if (isVideo && file.Length > MaxVideoSize)
                 return ServiceResult<string?>.Fail(
-                    StatusCodes.Status400BadRequest,
+                    StatusCodes.Status413RequestEntityTooLarge,
                     "FILE_TOO_LARGE",
                     "El video no puede superar los 20 MB."
                     );
