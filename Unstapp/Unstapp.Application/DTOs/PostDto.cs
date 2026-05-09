@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unstapp.Infrastructure.Entities.Enums;
 
 namespace Unstapp.Application.DTOs
 {
@@ -15,6 +16,7 @@ namespace Unstapp.Application.DTOs
         public string Content { get; set; } = null!;
         public string? MediaUrl { get; set; }
         public DateTime PostDate { get; set; }
+        public PostCategory Category { get; set; }
         public int LikesCount { get; set; }
         public int CommentsCount { get; set; }
         public bool isLikedByMe { get; set; } = false;

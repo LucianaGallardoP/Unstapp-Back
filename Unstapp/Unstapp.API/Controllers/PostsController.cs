@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Shared.DTOs.Common;
+using Unstapp.Infrastructure.Entities.Enums;
 
 namespace Unstapp.API.Controllers
 {
@@ -20,7 +21,7 @@ namespace Unstapp.API.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] PostFilter filter = PostFilter.Todos)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -32,8 +33,12 @@ namespace Unstapp.API.Controllers
                     Message = "Token inválido."
                 });
 
-            var posts = await _postService.GetAllAsync(userId);
-            return Ok(posts);
+            var result = await _postService.GetAllAsync(userId, filter);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(result.Data);
         }
 
 

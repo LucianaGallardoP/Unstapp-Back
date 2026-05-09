@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unstapp.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Unstapp.Infrastructure.Data;
 namespace Unstapp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260507224130_AddCareersAndPostCategories")]
+    partial class AddCareersAndPostCategories
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,12 +33,12 @@ namespace Unstapp.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CareerId"));
 
-                    b.Property<int>("FacultyId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("CareerName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("FacultyId")
+                        .HasColumnType("integer");
 
                     b.HasKey("CareerId");
 
@@ -85,13 +88,9 @@ namespace Unstapp.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FacultyId"));
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("FacultyId");
 
-                    b.ToTable("Faculties");
+                    b.ToTable("Faculty");
                 });
 
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Like", b =>

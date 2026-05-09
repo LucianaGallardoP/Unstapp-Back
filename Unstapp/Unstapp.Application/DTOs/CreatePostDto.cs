@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
+using Unstapp.Infrastructure.Entities.Enums;
 
 namespace Unstapp.Application.DTOs
 {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unstapp.Infrastructure.Entities;
+using Unstapp.Infrastructure.Entities.Enums;
 
 namespace Unstapp.Infrastructure.Interfaces
 {
@@ -13,5 +14,7 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<Post?> GetByIdWithRelationsAsync(int postId);
         Task<List<Post>> GetAllWithRelationsAsync();
         Task<bool> PostExistsAsync(int postId);
+
+        Task<List<Post>> GetFilteredPostsAsync(int userId, PostFilter filter);
     }
 }

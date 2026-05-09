@@ -7,6 +7,7 @@ using Unstapp.Shared.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 using Microsoft.AspNetCore.Http;
 using Npgsql.PostgresTypes;
+using Unstapp.Infrastructure.Entities.Enums;
 
 namespace Unstapp.Application.Services
 {
@@ -15,14 +16,17 @@ namespace Unstapp.Application.Services
         private readonly IPostRepository _postRepository;
         private readonly IMapper _mapper;
         private readonly IMediaStorageService _mediaStorageService;
+        private readonly IUserRepository _userRepository;
         public PostService(
             IPostRepository postRepository,
             IMapper mapper,
-            IMediaStorageService mediaStorageService)
+            IMediaStorageService mediaStorageService,
+            IUserRepository userRepository)
         {
             _postRepository = postRepository;
             _mapper = mapper;
             _mediaStorageService = mediaStorageService;
+            _userRepository = userRepository;
         }
 
         public async Task<ServiceResult<PostDto>> CreateAsync(int userId, CreatePostDto dto)
@@ -35,6 +39,10 @@ namespace Unstapp.Application.Services
                     "El post debe tener texto."
                     );
             }
+
+            var roles = await _userRepository.GetRoleNameByUserIdAsync(userId);
+
+            var category = ResolvePostCategoryFromRoles(roles);
 
             string? mediaUrl = null;
 
@@ -55,6 +63,20 @@ namespace Unstapp.Application.Services
             post.UserId = userId;
             post.PostDate = DateTime.UtcNow;
             post.MediaUrl = mediaUrl;
+            post.Category = category;
+
+            if(post.Category == PostCategory.General)
+            {
+                var userCareerIds = await _userRepository.GetCareerIdsByUserIdAsync(userId);
+
+                foreach(var careerId in userCareerIds)
+                {
+                    post.PostCareers.Add(new PostCareer
+                    {
+                        CareerId = careerId,
+                    });
+                }
+            }
 
             await _postRepository.AddAsync(post);
 
@@ -65,9 +87,9 @@ namespace Unstapp.Application.Services
             return ServiceResult<PostDto>.Ok(responseDto);
         }
 
-        public async Task<List<PostDto>> GetAllAsync(int currentUserId)
+        public async Task<ServiceResult<List<PostDto>>> GetAllAsync(int userId, PostFilter filter)
         {
-            var posts = await _postRepository.GetAllWithRelationsAsync();
+            var posts = await _postRepository.GetFilteredPostsAsync(userId, filter);
 
             var postDtos = _mapper.Map<List<PostDto>>(posts);
 
@@ -77,10 +99,32 @@ namespace Unstapp.Application.Services
 
                 postDto.LikesCount = post.Likes.Count();
                 postDto.CommentsCount = post.Comments.Count();
-                postDto.isLikedByMe = post.Likes.Any(l => l.UserId == currentUserId);
+                postDto.isLikedByMe = post.Likes.Any(l => l.UserId == userId);
             }
 
-            return postDtos;
+            return ServiceResult<List<PostDto>>.Ok(postDtos);
+        }
+
+        private static PostCategory ResolvePostCategoryFromRoles(List<string> roles)
+        {
+            if (roles.Any(r =>
+            r.Equals("Bar", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("Fotocopiadora", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("Administración", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("Administrativo", StringComparison.OrdinalIgnoreCase)))
+            {
+                return PostCategory.Administrativo;
+            }
+
+            if(roles.Any(r =>
+            r.Equals("Alumno", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("Profesor", StringComparison.OrdinalIgnoreCase)))
+            {
+                return PostCategory.General;
+            }
+
+            return PostCategory.General;
         }
     }
 }

@@ -17,5 +17,6 @@
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; } = new List<Like>();
+        public ICollection<UserCareer> UserCareers { get; set; } = new List<UserCareer>();
     }
 }

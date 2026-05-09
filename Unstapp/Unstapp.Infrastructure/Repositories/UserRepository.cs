@@ -32,5 +32,21 @@ namespace Unstapp.Infrastructure.Repositories
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<int>> GetCareerIdsByUserIdAsync(int userId)
+        {
+            return await _context.UserCareers
+                .Where(uc => uc.UserId == userId)
+                .Select(uc => uc.CareerId)
+                .ToListAsync();
+        }
+
+        public async Task<List<string>> GetRoleNameByUserIdAsync(int userId)
+        {
+            return await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Select(ur => ur.Role.Name)
+                .ToListAsync();
+        }
     }
 }

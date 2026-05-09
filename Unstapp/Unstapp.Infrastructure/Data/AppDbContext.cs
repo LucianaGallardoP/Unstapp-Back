@@ -18,6 +18,11 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<Comment> Comments => Set<Comment>();
         public DbSet<Like> Likes => Set<Like>();
+        public DbSet<Career> Careers => Set<Career>();
+        public DbSet<UserCareer> UserCareers => Set<UserCareer>();
+        public DbSet<PostCareer> PostCareers => Set<PostCareer>();
+        public DbSet<Faculty> Faculties => Set<Faculty>();
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -61,6 +66,7 @@ namespace Unstapp.Infrastructure.Data
                 entity.HasKey(e => e.PostId);
                 entity.Property(e => e.Content).IsRequired();
                 entity.Property(e => e.PostDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(p => p.Category).HasConversion<string>();
 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Posts)
@@ -105,7 +111,51 @@ namespace Unstapp.Infrastructure.Data
                     .IsUnique();
             });
 
+            modelBuilder.Entity<Career>(entity =>
+            {
+                entity.HasKey(c => c.CareerId);
 
+                entity.Property(c => c.Name)
+                    .IsRequired();
+
+                entity.HasOne(c => c.Faculty)
+                    .WithMany(f => f.Careers)
+                    .HasForeignKey(c => c.FacultyId);
+            });
+
+            modelBuilder.Entity<UserCareer>(entity =>
+            {
+                entity.HasKey(uc => new { uc.UserId, uc.CareerId });
+
+                entity.HasOne(uc => uc.User)
+                    .WithMany(u => u.UserCareers)
+                    .HasForeignKey(uc => uc.UserId);
+
+                entity.HasOne(uc => uc.Career)
+                    .WithMany(c => c.UserCareers)
+                    .HasForeignKey(uc => uc.CareerId);
+            });
+
+            modelBuilder.Entity<PostCareer>(entity =>
+            {
+                entity.HasKey(pc => new { pc.PostId, pc.CareerId });
+
+                entity.HasOne(pc => pc.Post)
+                    .WithMany(p => p.PostCareers)
+                    .HasForeignKey(pc => pc.PostId);
+
+                entity.HasOne(pc => pc.Career)
+                    .WithMany(c => c.PostCareers)
+                    .HasForeignKey(pc => pc.CareerId);
+            });
+
+            modelBuilder.Entity<Faculty>(entity =>
+            {
+                entity.HasKey(f => f.FacultyId);
+
+                entity.Property(f => f.Name)
+                .IsRequired();
+            });
         }
     }
 }
