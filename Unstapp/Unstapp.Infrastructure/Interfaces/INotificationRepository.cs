@@ -14,6 +14,7 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<Notification?> GetByIdAsync(int notificationId);
         Task MarkAllAsReadByUserIdAsync(int userId);
         Task SoftDeleteAllByUserIdAsync(int userId);
+        Task<bool> HasUnreadByUserIdAsync(int userId);
         Task SaveChangesAsync();
     }
 }

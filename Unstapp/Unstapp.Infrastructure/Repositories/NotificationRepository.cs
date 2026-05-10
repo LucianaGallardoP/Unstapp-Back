@@ -67,6 +67,15 @@ namespace Unstapp.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task<bool> HasUnreadByUserIdAsync(int userId)
+        {
+            return await _context.Notifications
+                .AnyAsync(n =>
+                n.RecipientUserId == userId &&
+                !n.IsRead &&
+                !n.IsDeleted);
+        }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
