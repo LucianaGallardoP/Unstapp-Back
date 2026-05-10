@@ -39,6 +39,34 @@ namespace Unstapp.Infrastructure.Repositories
                 .FirstOrDefaultAsync(n => n.NotificationId == notificationId);
         }
 
+        public async Task MarkAllAsReadByUserIdAsync(int userId)
+        {
+            var notifications = await _context.Notifications
+                .Where(n => n.RecipientUserId == userId && !n.IsDeleted && !n.IsRead)
+                .ToListAsync();
+
+            foreach (var notification in notifications)
+            {
+                notification.IsRead = true;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task SoftDeleteAllByUserIdAsync(int userId)
+        {
+            var notifications = await _context.Notifications
+                .Where(n => n.RecipientUserId == userId && !n.IsDeleted)
+                .ToListAsync();
+
+            foreach(var notification in notifications)
+            {
+                notification.IsDeleted = true;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
