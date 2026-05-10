@@ -19,7 +19,7 @@ namespace Unstapp.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Search([FromQuery] string term)
+        public async Task<IActionResult> Search([FromQuery] string? term)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 

@@ -38,7 +38,7 @@ namespace Unstapp.Application.Services
 
             term = term.Trim();
 
-            var users = await _userRepository.SearchUsersAsync(term);
+            var users = await _userRepository.SearchUsersAsync(term, userId);
             var posts = await _postRepository.SearchPostsAsync(term);
 
             var usersDto = users.Select(u => new UserSearchResponseDto
