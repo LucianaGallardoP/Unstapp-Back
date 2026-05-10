@@ -34,6 +34,7 @@ namespace Unstapp.Infrastructure.Repositories
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
+                .Include(p => p.PostCareers)
                 .FirstOrDefaultAsync(p => p.PostId == postId);
         }
 

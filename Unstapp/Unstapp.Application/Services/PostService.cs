@@ -105,6 +105,23 @@ namespace Unstapp.Application.Services
             return ServiceResult<List<PostDto>>.Ok(postDtos);
         }
 
+        public async Task<ServiceResult<PostDto>> GetByIdAsync(int userId, int postId)
+        {
+            var post = await _postRepository.GetByIdWithRelationsAsync(postId);
+
+            if (post == null)
+                return ServiceResult<PostDto>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "POST_NOT_FOUND",
+                    "Publicación no encontrada."
+                    );
+
+            var postDto = _mapper.Map<PostDto>(post);
+            postDto.isLikedByMe = post.Likes.Any(l => l.UserId == userId);
+
+            return ServiceResult<PostDto>.Ok(postDto);
+        }
+
         private static PostCategory ResolvePostCategoryFromRoles(List<string> roles)
         {
             if (roles.Any(r =>

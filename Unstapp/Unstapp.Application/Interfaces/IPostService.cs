@@ -13,5 +13,6 @@ namespace Unstapp.Application.Interfaces
     {
         Task<ServiceResult<PostDto>> CreateAsync(int userId, CreatePostDto dto);
         Task<ServiceResult<List<PostDto>>> GetAllAsync(int userId, PostFilter filter);
+        Task<ServiceResult<PostDto>> GetByIdAsync(int userId, int postId);
     }
 }
