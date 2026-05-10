@@ -40,6 +40,29 @@ namespace Unstapp.API.Controllers
             return Ok(result.Data);
         }
 
+        [HttpGet("has-unread")]
+        public async Task<IActionResult> HasUnreadNotifications()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
+            }
+
+            var result = await _notificationService.HasUnreadNotificationsAsync(userId);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(result.Data);
+        }
+
         [HttpPatch("{notificationId:int}/read")]
         public async Task<IActionResult> MarkAsRead(int notificationId)
         {
