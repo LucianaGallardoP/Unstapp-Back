@@ -112,6 +112,20 @@ namespace Unstapp.Application.Services
             return ServiceResult<bool>.Ok(true);
         }
 
+        public async Task<ServiceResult<bool>> MarkAllAsReadAsync(int userId)
+        {
+            await _notificationRepository.MarkAllAsReadByUserIdAsync(userId);
+            
+            return ServiceResult<bool>.Ok(true);
+        }
+
+        public async Task<ServiceResult<bool>> DeleteAllAsync(int userId)
+        {
+            await _notificationRepository.SoftDeleteAllByUserIdAsync(userId);
+
+            return ServiceResult<bool>.Ok(true);
+        }
+
         private async Task<Notification?> CreateNotification(
             int actorUserId,
             int postId,

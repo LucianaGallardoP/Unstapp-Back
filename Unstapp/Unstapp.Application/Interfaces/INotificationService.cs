@@ -15,5 +15,7 @@ namespace Unstapp.Application.Interfaces
         Task<ServiceResult<List<NotificationResponseDto>>> GetMyNotificationsAsync(int userId);
         Task<ServiceResult<bool>> MarkAsReadAsync(int userId, int notificationId);
         Task<ServiceResult<bool>> DeleteAsync(int userId, int notificationId);
+        Task<ServiceResult<bool>> MarkAllAsReadAsync(int userId);
+        Task<ServiceResult<bool>> DeleteAllAsync(int userId);
     }
 }
