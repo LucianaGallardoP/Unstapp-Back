@@ -15,5 +15,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<List<Post>> GetAllWithRelationsAsync();
         Task<bool> PostExistsAsync(int postId);
         Task<List<Post>> GetFilteredPostsAsync(int userId, PostFilter filter);
+        Task<List<Post>> SearchPostsAsync(string term);
     }
 }

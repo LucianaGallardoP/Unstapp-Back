@@ -81,5 +81,19 @@ namespace Unstapp.Infrastructure.Repositories
         {
             return await _context.Posts.AnyAsync(p => p.PostId == postId);
         }
+
+        public async Task<List<Post>> SearchPostAsync(string term)
+        {
+            term = term.Trim();
+
+            return await _context.Posts
+                .Include(p => p.User)
+                .Include(p => p.Likes)
+                .Include(p => p.Comments)
+                .Where(p => EF.Functions.ILike(p.Content, $"%{term}%"))
+                .OrderByDescending(p => p.PostDate)
+                .Take(20)
+                .ToListAsync();
+        }
     }
 }
