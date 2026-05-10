@@ -7,7 +7,7 @@ using Unstapp.Infrastructure.Entities;
 
 namespace Unstapp.Infrastructure.Interfaces
 {
-    internal interface INotificationRepository
+    public interface INotificationRepository
     {
         Task AddAsync(Notification notification);
         Task<List<Notification>> GetAllByUserIdAsync(int userId);

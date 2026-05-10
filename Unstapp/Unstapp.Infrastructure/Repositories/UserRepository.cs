@@ -48,5 +48,13 @@ namespace Unstapp.Infrastructure.Repositories
                 .Select(ur => ur.Role.Name)
                 .ToListAsync();
         }
+
+        public async Task<User?> GetByIdAsync(int userId)
+        {
+            return await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+        }
     }
 }
