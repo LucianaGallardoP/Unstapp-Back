@@ -56,5 +56,20 @@ namespace Unstapp.Infrastructure.Repositories
                 .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
         }
+
+        public async Task<List<User>> SearchUsersAsync(string term)
+        {
+            term = term.Trim();
+
+            return await _context.Users
+                .Where(u =>
+                    EF.Functions.ILike(u.Name, $"%{term}%") ||
+                    EF.Functions.ILike(u.LastName, $"%{term}%") ||
+                    EF.Functions.ILike(u.Name + " " + u.LastName, $"%{term}%"))
+                .OrderBy(u => u.Name)
+                .ThenBy(u => u.LastName)
+                .Take(20)
+                .ToListAsync();
+        }
     }
 }
