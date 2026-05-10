@@ -15,15 +15,18 @@ namespace Unstapp.Application.Services
     {
         private readonly ICommentRepository _commentRepository;
         private readonly IPostRepository _postRepository;
+        private readonly INotificationService _notificationService;
         private readonly IMapper _mapper;
 
         public CommentService(
             ICommentRepository commentRepository,
             IPostRepository postRepository,
+            INotificationService notificationService,
             IMapper mapper)
         {
             _commentRepository = commentRepository;
             _postRepository = postRepository;
+            _notificationService = notificationService;
             _mapper = mapper;
         }
 
@@ -56,6 +59,8 @@ namespace Unstapp.Application.Services
             comment.CreatedAt = DateTime.UtcNow;
 
             await _commentRepository.AddAsync(comment);
+
+            await _notificationService.CreateCommentNotificationAsync(userId, postId);
 
             var createdComment = await _commentRepository.GetByIdWithRelationsAsync(comment.CommentId);
 
