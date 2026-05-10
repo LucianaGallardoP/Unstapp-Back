@@ -126,6 +126,13 @@ namespace Unstapp.Application.Services
             return ServiceResult<bool>.Ok(true);
         }
 
+        public async Task<ServiceResult<bool>> HasUnreadNotificationsAsync(int userId)
+        {
+            var hasUnread = await _notificationRepository.HasUnreadByUserIdAsync(userId);
+            
+            return ServiceResult<bool>.Ok(hasUnread);
+        }
+
         private async Task<Notification?> CreateNotification(
             int actorUserId,
             int postId,
