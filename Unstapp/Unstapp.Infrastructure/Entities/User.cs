@@ -18,5 +18,7 @@
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; } = new List<Like>();
         public ICollection<UserCareer> UserCareers { get; set; } = new List<UserCareer>();
+        public ICollection<Notification> ReceivedNotifications { get; set; } = new List<Notification>();
+        public ICollection<Notification> SentNotifications { get; set; } = new List<Notification>();
     }
 }

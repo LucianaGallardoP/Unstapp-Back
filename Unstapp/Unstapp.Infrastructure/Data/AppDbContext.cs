@@ -22,6 +22,7 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<UserCareer> UserCareers => Set<UserCareer>();
         public DbSet<PostCareer> PostCareers => Set<PostCareer>();
         public DbSet<Faculty> Faculties => Set<Faculty>();
+        public DbSet<Notification> Notifications => Set<Notification>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -155,6 +156,45 @@ namespace Unstapp.Infrastructure.Data
 
                 entity.Property(f => f.Name)
                 .IsRequired();
+            });
+
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(n => n.NotificationId);
+
+                entity.Property(n => n.ActorUserName)
+                    .IsRequired();
+
+                entity.Property(n => n.ActionType)
+                    .HasConversion<string>()
+                    .IsRequired();
+
+                entity.Property(n => n.IsPriority)
+                    .HasDefaultValue(false);
+
+                entity.Property(n => n.IsRead)
+                    .HasDefaultValue(false);
+
+                entity.Property(n => n.IsDeleted)
+                    .HasDefaultValue(false);
+
+                entity.Property(n => n.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(n => n.RecipientUser)
+                    .WithMany(u => u.ReceivedNotifications)
+                    .HasForeignKey(n => n.RecipientUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(n => n.ActorUser)
+                    .WithMany(u => u.SentNotifications)
+                    .HasForeignKey(n => n.ActorUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(n => n.Post)
+                    .WithMany()
+                    .HasForeignKey(n => n.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
