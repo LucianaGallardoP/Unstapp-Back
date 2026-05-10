@@ -53,7 +53,7 @@ namespace Unstapp.API.Controllers
                     Message = "Token inválido."
                 });
 
-            var result = await _notificationService.MakeAsReadAsync(userId, notificationId);
+            var result = await _notificationService.MarkAsReadAsync(userId, notificationId);
 
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
