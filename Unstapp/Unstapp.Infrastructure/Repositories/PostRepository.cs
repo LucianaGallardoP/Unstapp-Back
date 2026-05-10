@@ -82,7 +82,7 @@ namespace Unstapp.Infrastructure.Repositories
             return await _context.Posts.AnyAsync(p => p.PostId == postId);
         }
 
-        public async Task<List<Post>> SearchPostAsync(string term)
+        public async Task<List<Post>> SearchPostsAsync(string term)
         {
             term = term.Trim();
 
