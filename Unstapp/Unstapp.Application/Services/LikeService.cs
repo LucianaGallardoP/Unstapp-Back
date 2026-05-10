@@ -14,11 +14,16 @@ namespace Unstapp.Application.Services
     {
         private readonly ILikeRepository _likeRepository;
         private readonly IPostRepository _postRepository;
+        private readonly INotificationService _notificationService;
 
-        public LikeService(ILikeRepository likeRepository, IPostRepository postRepository)
+        public LikeService(
+            ILikeRepository likeRepository,
+            IPostRepository postRepository,
+            INotificationService notificationService)
         {
             _likeRepository = likeRepository;
             _postRepository = postRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<ToggleLikeResult> ToggleLikeAsync(int postId, int userId)
@@ -46,6 +51,8 @@ namespace Unstapp.Application.Services
 
             if(!created)
                 return ToggleLikeResult.DuplicateLike;
+
+            await _notificationService.CreateLikeNotificationAsync(userId, postId);
 
             return ToggleLikeResult.Liked;
         }
