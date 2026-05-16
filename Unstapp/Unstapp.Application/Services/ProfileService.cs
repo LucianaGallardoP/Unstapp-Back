@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
+using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 
@@ -14,10 +15,14 @@ namespace Unstapp.Application.Services
     public class ProfileService : IProfileService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IUserFollowRepository _userFollowRepository;
 
-        public ProfileService(IUserRepository userRepository)
+        public ProfileService(
+            IUserRepository userRepository,
+            IUserFollowRepository userFollowRepository)
         {
             _userRepository = userRepository;
+            _userFollowRepository = userFollowRepository;
         }
 
         public async Task<ServiceResult<ProfileResponseDto>> GetProfileAsync(
@@ -37,7 +42,10 @@ namespace Unstapp.Application.Services
 
             var isFollowing = false;
 
-            // TODO: VERIFICACION DE FOLLOWING
+            if (!isOwnProfile)
+            {
+                isFollowing = await _userFollowRepository.ExistsAsync(currentUserId, profileUserId);
+            }
 
             var response = new ProfileResponseDto
             {
@@ -55,5 +63,58 @@ namespace Unstapp.Application.Services
 
             return ServiceResult<ProfileResponseDto>.Ok(response);
         }
+        public async Task<ServiceResult<FollowToggleResponseDto>> ToggleFollowAsync(
+            int followerUserId,
+            int followedUserId)
+        {
+            if (followerUserId == followedUserId)
+                return ServiceResult<FollowToggleResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "CANNOT_FOLLOW_YOURSELF",
+                    "No puedes seguir a t propio perfil."
+                    );
+
+            var profileUser = await _userRepository.GetByIdAsync(followedUserId);
+
+            if (profileUser == null)
+                return ServiceResult<FollowToggleResponseDto>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "USER_NOT_FOUND",
+                    "Usuario no encontrado.");
+
+            var alreadyFollowing = await _userFollowRepository.ExistsAsync(followerUserId, followedUserId);
+
+            if(alreadyFollowing)
+            {
+                await _userFollowRepository.DeleteAsync(followerUserId, followedUserId);
+
+                await _userFollowRepository.SaveChangesAsync();
+
+                return ServiceResult<FollowToggleResponseDto>.Ok(new FollowToggleResponseDto
+                {
+                    ProfileUserId = followedUserId,
+                    IsFollowing = false,
+                    Message = "Dejaste de seguir a este perfil."
+                });
+            }
+
+            var follow = new UserFollow
+            {
+                FollowerUserId = followerUserId,
+                FollowedUserId = followedUserId,
+                FollowedAt = DateTime.UtcNow
+            };
+
+            await _userFollowRepository.AddAsync(follow);
+            await _userFollowRepository.SaveChangesAsync();
+
+            return ServiceResult<FollowToggleResponseDto>.Ok(new FollowToggleResponseDto
+            {
+                ProfileUserId = followedUserId,
+                IsFollowing = true,
+                Message = "Comenzaste a seguir a este perfil."
+            });
+        }
+
     }
 }

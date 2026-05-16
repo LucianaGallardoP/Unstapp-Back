@@ -22,5 +22,7 @@
         public ICollection<UserCareer> UserCareers { get; set; } = new List<UserCareer>();
         public ICollection<Notification> ReceivedNotifications { get; set; } = new List<Notification>();
         public ICollection<Notification> SentNotifications { get; set; } = new List<Notification>();
+        public ICollection<UserFollow> Following { get; set; } = new List<UserFollow>();
+        public ICollection<UserFollow> Followers { get; set; } = new List<UserFollow>();
     }
 }

@@ -23,6 +23,7 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<PostCareer> PostCareers => Set<PostCareer>();
         public DbSet<Faculty> Faculties => Set<Faculty>();
         public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<UserFollow> UserFollow => Set<UserFollow>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -195,6 +196,24 @@ namespace Unstapp.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(n => n.PostId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserFollow>(entity =>
+            {
+                entity.HasKey(uf => new { uf.FollowerUserId, uf.FollowedUserId });
+
+                entity.HasOne(uf => uf.FollowerUser)
+                    .WithMany(u => u.Following)
+                    .HasForeignKey(uf => uf.FollowerUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(uf => uf.FollowedUser)
+                    .WithMany(u => u.Followers)
+                    .HasForeignKey(uf => uf.FollowedUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(uf => uf.FollowedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
         }
     }

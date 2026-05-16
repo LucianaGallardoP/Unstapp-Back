@@ -11,5 +11,6 @@ namespace Unstapp.Application.Interfaces
     public interface IProfileService
     {
         Task<ServiceResult<ProfileResponseDto>> GetProfileAsync(int requestedUserId, int tokenUserId);
+        Task<ServiceResult<FollowToggleResponseDto>> ToggleFollowAsync(int followerUserId, int followedUserId);
     }
 }
