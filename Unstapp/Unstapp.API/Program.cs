@@ -99,6 +99,7 @@ builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 
 var port = Environment.GetEnvironmentVariable("PORT");
 if(!string.IsNullOrWhiteSpace(port))

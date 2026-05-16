@@ -15,5 +15,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<List<string>> GetRoleNameByUserIdAsync(int userId);
         Task<User?> GetByIdAsync(int userId);
         Task<List<User>> SearchUsersAsync(string term, int currentUserId);
+        Task<User?> GetProfileByIdAsync(int userId);
     }
 }

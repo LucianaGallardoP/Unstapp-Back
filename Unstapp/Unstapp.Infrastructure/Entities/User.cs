@@ -12,6 +12,8 @@
         public string? AvatarUrl { get; set; }
         public string? Bio { get; set; }
         public bool FirstTime { get; set; } = true;
+        public string? Biography { get; set; }
+        public string? CoverUrl { get; set; }
 
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public ICollection<Post> Posts { get; set; } = new List<Post>();

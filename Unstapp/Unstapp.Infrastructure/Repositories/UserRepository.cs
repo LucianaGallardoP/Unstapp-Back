@@ -74,5 +74,13 @@ namespace Unstapp.Infrastructure.Repositories
                 .Take(20)
                 .ToListAsync();
         }
+
+        public async Task<User?> GetProfileByIdAsync(int userId)
+        {
+            return await _context.Users
+                .Include(u => u.UserCareers)
+                    .ThenInclude(uc => uc.Career)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+        }
     }
 }
