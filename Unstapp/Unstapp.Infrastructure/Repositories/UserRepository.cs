@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
+using Unstapp.Shared.DTOs;
 
 namespace Unstapp.Infrastructure.Repositories
 {
@@ -81,6 +82,22 @@ namespace Unstapp.Infrastructure.Repositories
                 .Include(u => u.UserCareers)
                     .ThenInclude(uc => uc.Career)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
+        }
+
+        public async Task<ProfileMetricsDto> GetProfileMetricsAsync(int userId)
+        {
+            return await _context.Users
+                .Where (u => u.UserId == userId)
+                .Select(u => new ProfileMetricsDto
+                {
+                    PostsCount = _context.Posts
+                        .Count(p => p.UserId == userId),
+                    FollowersCount = _context.UserFollow
+                        .Count(uf => uf.FollowedUserId == userId),
+                    FollowingCount = _context.UserFollow
+                        .Count(uf => uf.FollowerUserId == userId)
+                })
+                .FirstOrDefaultAsync() ?? new ProfileMetricsDto();
         }
     }
 }

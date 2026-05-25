@@ -47,6 +47,8 @@ namespace Unstapp.Application.Services
                 isFollowing = await _userFollowRepository.ExistsAsync(currentUserId, profileUserId);
             }
 
+            var metrics = await _userRepository.GetProfileMetricsAsync(profileUserId);
+
             var response = new ProfileResponseDto
             {
                 UserId = user.UserId,
@@ -58,7 +60,10 @@ namespace Unstapp.Application.Services
                 AvatarUrl = user.AvatarUrl,
                 CoverUrl = user.CoverUrl,
                 IsOwnProfile = isOwnProfile,
-                IsFollowing = isFollowing
+                IsFollowing = isFollowing,
+                PostsCount = metrics.PostsCount,
+                FollowersCount = metrics.FollowersCount,
+                FollowingCount = metrics.FollowingCount
             };
 
             return ServiceResult<ProfileResponseDto>.Ok(response);

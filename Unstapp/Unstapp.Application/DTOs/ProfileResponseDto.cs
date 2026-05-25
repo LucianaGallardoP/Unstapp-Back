@@ -17,5 +17,8 @@ namespace Unstapp.Application.DTOs
         public string? CoverUrl { get; set; }
         public bool IsOwnProfile { get; set; }
         public bool IsFollowing { get; set; }
+        public int PostsCount { get; set; }
+        public int FollowersCount { get; set; }
+        public int FollowingCount { get; set; }
     }
 }

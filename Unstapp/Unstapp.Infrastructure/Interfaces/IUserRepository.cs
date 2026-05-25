@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unstapp.Infrastructure.Entities;
+using Unstapp.Shared.DTOs;
 
 namespace Unstapp.Infrastructure.Interfaces
 {
@@ -16,5 +17,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<User?> GetByIdAsync(int userId);
         Task<List<User>> SearchUsersAsync(string term, int currentUserId);
         Task<User?> GetProfileByIdAsync(int userId);
+        Task<ProfileMetricsDto> GetProfileMetricsAsync(int userId);
     }
 }
