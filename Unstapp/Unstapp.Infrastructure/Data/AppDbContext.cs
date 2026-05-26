@@ -71,7 +71,7 @@ namespace Unstapp.Infrastructure.Data
             modelBuilder.Entity<Post>(entity =>
             {
                 entity.HasKey(e => e.PostId);
-                entity.Property(e => e.Content).IsRequired();
+                entity.Property(e => e.Content).HasMaxLength(500);
                 entity.Property(e => e.PostDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(p => p.Category).HasConversion<string>();
 

@@ -12,7 +12,7 @@ namespace Unstapp.Infrastructure.Entities
         public int PostId { get; set; }
         public int UserId { get; set; }
         public int? SubjectId { get; set; }
-        public string Content { get; set; } = null!;
+        public string? Content { get; set; }
         public string? MediaUrl { get; set; }
         public DateTime PostDate { get; set; } = DateTime.UtcNow;
         public PostCategory Category { get; set; } = PostCategory.General;

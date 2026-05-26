@@ -14,8 +14,14 @@ namespace Unstapp.Application.Mappings
         public PostProfile()
         {
             CreateMap<CreatePostDto, Post>()
+                .ForMember(dest => dest.PostId, opt => opt.Ignore())
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.PostDate, opt => opt.Ignore());
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.MediaUrl, opt => opt.Ignore())
+                .ForMember(dest => dest.PostDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Likes, opt => opt.Ignore())
+                .ForMember(dest => dest.Comments, opt => opt.Ignore())
+                .ForMember(dest => dest.PostCareers, opt => opt.Ignore());
 
             CreateMap<Post, PostDto>()
                 .ForMember(dest => dest.UserName,
