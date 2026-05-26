@@ -31,12 +31,12 @@ namespace Unstapp.Application.Services
 
         public async Task<ServiceResult<PostDto>> CreateAsync(int userId, CreatePostDto dto)
         {
-            if(string.IsNullOrWhiteSpace(dto.Content))
+            if (string.IsNullOrWhiteSpace(dto.Content) && dto.MediaFile == null)
             {
                 return ServiceResult<PostDto>.Fail(
                     StatusCodes.Status400BadRequest,
                     "POST_EMPTY",
-                    "El post debe tener texto."
+                    "El post debe tener texto o archivo multimedia."
                     );
             }
 
@@ -60,6 +60,11 @@ namespace Unstapp.Application.Services
             }
 
             var post = _mapper.Map<Post>(dto);
+
+            post.Content = string.IsNullOrWhiteSpace(dto.Content)
+                ? null
+                : dto.Content.Trim();
+
             post.UserId = userId;
             post.PostDate = DateTime.UtcNow;
             post.MediaUrl = mediaUrl;
