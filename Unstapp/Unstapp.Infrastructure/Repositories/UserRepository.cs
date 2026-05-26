@@ -8,6 +8,7 @@ using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs;
+using Unstapp.Shared.Helpers;
 
 namespace Unstapp.Infrastructure.Repositories
 {
@@ -60,16 +61,16 @@ namespace Unstapp.Infrastructure.Repositories
 
         public async Task<List<User>> SearchUsersAsync(string term, int currentUserId)
         {
-            term = term.Trim();
+            term = SearchHelpers.RemoveDiacritics(term.Trim());
 
             return await _context.Users
                 .Where(u =>
                     u.UserId != currentUserId &&
                     (
-                        EF.Functions.ILike(u.Name, $"%{term}%") ||
-                        EF.Functions.ILike(u.LastName, $"%{term}%") ||
-                        EF.Functions.ILike(u.Name + " " + u.LastName, $"%{term}%"))
-                    )
+                        EF.Functions.ILike(PostgresDbFunctions.Unaccent(u.Name), $"%{term}%") ||
+                        EF.Functions.ILike(PostgresDbFunctions.Unaccent(u.LastName), $"%{term}%") ||
+                        EF.Functions.ILike(PostgresDbFunctions.Unaccent(u.Name + " " + u.LastName), $"%{term}%")
+                    ))
                 .OrderBy(u => u.Name)
                 .ThenBy(u => u.LastName)
                 .Take(20)

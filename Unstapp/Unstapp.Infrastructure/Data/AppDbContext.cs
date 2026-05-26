@@ -30,6 +30,11 @@ namespace Unstapp.Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder
+                .HasDbFunction(typeof(PostgresDbFunctions)
+                .GetMethod(nameof(PostgresDbFunctions.Unaccent), new[] { typeof(string) })!)
+                .HasName("unaccent");
+
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.HasKey(e => e.RoleId);

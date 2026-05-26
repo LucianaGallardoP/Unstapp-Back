@@ -8,7 +8,5 @@ public class RegisterRequestDto
     public string Password { get; set; } = null!;
     public string DNI { get; set; } = null!;
     public string PhoneNumber { get; set; } = null!;
-
-    [Url(ErrorMessage = "El Avatar debe ser una URL válida")]
     public string? AvatarUrl { get; set; }
 }

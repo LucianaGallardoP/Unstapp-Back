@@ -51,14 +51,14 @@ namespace Unstapp.Infrastructure.Services
 
             if (isImage && file.Length > MaxImageSize)
                 return ServiceResult<string?>.Fail(
-                    StatusCodes.Status400BadRequest,
+                    StatusCodes.Status413PayloadTooLarge,
                     "FILE_TOO_LARGE",
                     "La imagen no puede superar los 5 MB."
                     );
 
             if (isVideo && file.Length > MaxVideoSize)
                 return ServiceResult<string?>.Fail(
-                    StatusCodes.Status413RequestEntityTooLarge,
+                    StatusCodes.Status413PayloadTooLarge,
                     "FILE_TOO_LARGE",
                     "El video no puede superar los 20 MB."
                     );

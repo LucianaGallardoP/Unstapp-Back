@@ -8,6 +8,7 @@ using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Entities.Enums;
 using Unstapp.Infrastructure.Interfaces;
+using Unstapp.Shared.Helpers;
 
 namespace Unstapp.Infrastructure.Repositories
 {
@@ -84,13 +85,14 @@ namespace Unstapp.Infrastructure.Repositories
 
         public async Task<List<Post>> SearchPostsAsync(string term)
         {
-            term = term.Trim();
+            term = SearchHelpers.RemoveDiacritics(term.Trim());
 
             return await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
-                .Where(p => EF.Functions.ILike(p.Content, $"%{term}%"))
+                .Where(p =>
+                    EF.Functions.ILike(PostgresDbFunctions.Unaccent(p.Content), $"%{term}%"))
                 .OrderByDescending(p => p.PostDate)
                 .Take(20)
                 .ToListAsync();
