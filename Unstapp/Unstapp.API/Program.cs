@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -10,6 +9,9 @@ using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Infrastructure.Repositories;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using CloudinaryDotNet;
+using Unstapp.Infrastructure.Services;
+using Unstapp.Shared.Interfaces;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -75,11 +77,30 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+var cloudinaryAccount = new Account(
+    builder.Configuration["Cloudinary:CloudName"],
+    builder.Configuration["Cloudinary:ApiKey"],
+    builder.Configuration["Cloudinary:ApiSecret"]
+    );
+
+var cloudinary = new Cloudinary(cloudinaryAccount);
+
+builder.Services.AddSingleton(cloudinary);
+builder.Services.AddScoped<IMediaStorageService, CloudinaryMediaStorageService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<ILikeRepository, LikeRepository>();
+builder.Services.AddScoped<ILikeService, LikeService>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IUserFollowRepository, UserFollowRepository>();
 
 var port = Environment.GetEnvironmentVariable("PORT");
 if(!string.IsNullOrWhiteSpace(port))
@@ -87,19 +108,22 @@ if(!string.IsNullOrWhiteSpace(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 }
 
+var allowedOrigins = builder.Configuration
+    .GetSection("AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
         policy
-        .WithOrigins(
-            "http://localhost:5173",
-            "https://localhost:5173"
-            )
+        .WithOrigins(allowedOrigins)
         .AllowAnyHeader()
         .AllowAnyMethod();
     });
 });
+
+
 
 var app = builder.Build();
 
@@ -120,6 +144,7 @@ app.UseCors("FrontendPolicy");
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
