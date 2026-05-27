@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
+using System.Security.Claims;
 using Unstapp.Shared.DTOs.Common;
 using Unstapp.Infrastructure.Entities.Enums;
 
@@ -20,6 +21,15 @@ namespace Unstapp.API.Controllers
             _postService = postService;
         }
 
+        [Authorize]
+        [HttpGet("user/{id}")]
+        public async Task<IActionResult> GetPostsByUser(int id)
+        {
+            var posts = await _postService.GetPostsByUserAsync(id);
+
+            return Ok(posts);
+        }
+        
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] PostFilter filter = PostFilter.Todos)
         {

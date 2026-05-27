@@ -50,6 +50,13 @@ namespace Unstapp.Infrastructure.Repositories
                 .OrderByDescending(p => p.PostDate)
                 .ToListAsync();
         }
+        
+        public async Task<List<Post>> GetPostsByUserAsync(int userId)
+        {
+            return await _context.Posts
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+        }
 
         public async Task<List<Post>> GetFilteredPostsAsync(int userId, PostFilter filter)
         {
