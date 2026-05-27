@@ -42,5 +42,12 @@ namespace Unstapp.Application.Services
             var posts = await _postRepository.GetAllWithRelationsAsync();
             return _mapper.Map<List<PostDto>>(posts);
         }
+        
+        public async Task<List<PostDto>> GetPostsByUserAsync(int userId)
+        {
+            var posts = await _postRepository.GetPostsByUserAsync(userId);
+
+            return _mapper.Map<List<PostDto>>(posts);
+        }
     }
 }

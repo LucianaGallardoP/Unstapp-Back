@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
+using System.Security.Claims;
 
 namespace Unstapp.API.Controllers
 {
@@ -18,10 +19,11 @@ namespace Unstapp.API.Controllers
         }
 
         [Authorize]
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
+        [HttpGet("user/{id}")]
+        public async Task<IActionResult> GetPostsByUser(int id)
         {
-            var posts = await _postService.GetAllAsync();
+            var posts = await _postService.GetPostsByUserAsync(id);
+
             return Ok(posts);
         }
 

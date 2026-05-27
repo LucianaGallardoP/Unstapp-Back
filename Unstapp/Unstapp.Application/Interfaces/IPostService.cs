@@ -11,5 +11,6 @@ namespace Unstapp.Application.Interfaces
     {
         Task<PostDto> CreateAsync(int userId, CreatePostDto dto);
         Task<List<PostDto>> GetAllAsync();
+        Task<List<PostDto>> GetPostsByUserAsync(int userId);
     }
 }
