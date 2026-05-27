@@ -74,6 +74,7 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(e => e.Content).HasMaxLength(500);
                 entity.Property(e => e.PostDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(p => p.Category).HasConversion<string>();
+                entity.Property(p => p.IsDeleted).HasDefaultValue(false);
 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Posts)

@@ -92,5 +92,29 @@ namespace Unstapp.API.Controllers
 
             return Ok(result.Data);
         }
+
+        [Authorize]
+        [HttpDelete("{postId:int}")]
+        public async Task<IActionResult> Delete(int postId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
+            }
+
+            var result = await _postService.DeleteAsync(postId, currentUserId);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return NoContent();
+        }
     }
 }

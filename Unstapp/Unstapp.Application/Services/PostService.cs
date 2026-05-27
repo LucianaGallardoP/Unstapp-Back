@@ -127,6 +127,44 @@ namespace Unstapp.Application.Services
             return ServiceResult<PostDto>.Ok(postDto);
         }
 
+        public async Task<ServiceResult<bool>> DeleteAsync(int postId, int currentUserId)
+        {
+            var post = await _postRepository.GetByIdIncludingDeletedAsync(postId);
+
+            if (post == null || post.IsDeleted)
+            {
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "POST_NOT_FOUND",
+                    "Publicación no encontrada."
+                );
+            }
+
+            var roles = await _userRepository.GetRoleNameByUserIdAsync(currentUserId);
+
+            var isAdmin = roles.Any(r =>
+                r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Administrativo", StringComparison.OrdinalIgnoreCase)
+            );
+
+            var isOwner = post.UserId == currentUserId;
+
+            if (!isOwner && !isAdmin)
+            {
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status403Forbidden,
+                    "FORBIDDEN_POST_DELETE",
+                    "No tenés permiso para eliminar esta publicación."
+                );
+            }
+
+            await _postRepository.SoftDeleteAsync(post);
+
+            return ServiceResult<bool>.Ok(true);
+        }
+
         private static PostCategory ResolvePostCategoryFromRoles(List<string> roles)
         {
             if (roles.Any(r =>

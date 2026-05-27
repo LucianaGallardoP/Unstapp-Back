@@ -32,6 +32,7 @@ namespace Unstapp.Infrastructure.Repositories
         public async Task<Post?> GetByIdWithRelationsAsync(int postId)
         {
             return await _context.Posts
+                .Where(p => !p.IsDeleted)
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
@@ -53,6 +54,7 @@ namespace Unstapp.Infrastructure.Repositories
         public async Task<List<Post>> GetFilteredPostsAsync(int userId, PostFilter filter)
         {
             var query = _context.Posts
+                .Where(p => !p.IsDeleted)
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
@@ -88,14 +90,29 @@ namespace Unstapp.Infrastructure.Repositories
             term = SearchHelpers.RemoveDiacritics(term.Trim());
 
             return await _context.Posts
+                .Where(p =>
+                    !p.IsDeleted &&
+                    p.Content != null &&
+                    EF.Functions.ILike(PostgresDbFunctions.Unaccent(p.Content), $"%{term}%"))
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
-                .Where(p =>
-                    EF.Functions.ILike(PostgresDbFunctions.Unaccent(p.Content), $"%{term}%"))
                 .OrderByDescending(p => p.PostDate)
                 .Take(20)
                 .ToListAsync();
+        }
+
+        public async Task<Post?> GetByIdIncludingDeletedAsync(int postId)
+        {
+            return await _context.Posts
+                .FirstOrDefaultAsync(p => p.PostId == postId);
+        }
+
+        public async Task SoftDeleteAsync(Post post)
+        {
+            post.IsDeleted = true;
+            _context.Posts.Update(post);
+            await _context.SaveChangesAsync();
         }
     }
 }
