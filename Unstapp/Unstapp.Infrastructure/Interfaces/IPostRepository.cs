@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Entities.Enums;
+using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.Infrastructure.Interfaces
 {
@@ -16,5 +17,7 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<bool> PostExistsAsync(int postId);
         Task<List<Post>> GetFilteredPostsAsync(int userId, PostFilter filter);
         Task<List<Post>> SearchPostsAsync(string term);
+        Task<Post?> GetByIdIncludingDeletedAsync(int postId);
+        Task SoftDeleteAsync(Post post);
     }
 }

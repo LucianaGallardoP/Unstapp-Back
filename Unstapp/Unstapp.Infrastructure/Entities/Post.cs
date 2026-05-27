@@ -16,6 +16,7 @@ namespace Unstapp.Infrastructure.Entities
         public string? MediaUrl { get; set; }
         public DateTime PostDate { get; set; } = DateTime.UtcNow;
         public PostCategory Category { get; set; } = PostCategory.General;
+        public bool IsDeleted { get; set; } = false;
 
         public User User { get; set; } = null!;
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
