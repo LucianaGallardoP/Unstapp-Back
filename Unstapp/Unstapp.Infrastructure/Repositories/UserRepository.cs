@@ -100,5 +100,11 @@ namespace Unstapp.Infrastructure.Repositories
                 })
                 .FirstOrDefaultAsync() ?? new ProfileMetricsDto();
         }
+
+        public async Task<bool> ExistsAsync(int userId)
+        {
+            return await _context.Users
+                .AnyAsync(u => u.UserId == userId);
+        }
     }
 }

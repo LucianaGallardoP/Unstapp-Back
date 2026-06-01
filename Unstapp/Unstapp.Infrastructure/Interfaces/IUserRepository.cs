@@ -18,5 +18,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<List<User>> SearchUsersAsync(string term, int currentUserId);
         Task<User?> GetProfileByIdAsync(int userId);
         Task<ProfileMetricsDto> GetProfileMetricsAsync(int userId);
+        Task<bool> ExistsAsync(int userId);
     }
 }

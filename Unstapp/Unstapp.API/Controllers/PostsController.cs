@@ -20,15 +20,6 @@ namespace Unstapp.API.Controllers
         {
             _postService = postService;
         }
-
-        [Authorize]
-        [HttpGet("user/{id}")]
-        public async Task<IActionResult> GetPostsByUser(int id)
-        {
-            var posts = await _postService.GetPostsByUserAsync(id);
-
-            return Ok(posts);
-        }
         
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] PostFilter filter = PostFilter.Todos)

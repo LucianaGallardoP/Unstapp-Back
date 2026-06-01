@@ -188,11 +188,31 @@ namespace Unstapp.Application.Services
             return PostCategory.General;
         }
         
-        public async Task<List<PostDto>> GetPostsByUserAsync(int userId)
+        public async Task<ServiceResult<List<PostDto>>> GetPostsByUserAsync(int userId)
         {
+            var userExists = await _userRepository.ExistsAsync(userId);
+
+            if(!userExists)
+                return ServiceResult<List<PostDto>>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "USER_NOT_FOUND",
+                    "Usuario no encontrado."
+                );
+
             var posts = await _postRepository.GetPostsByUserAsync(userId);
 
-            return _mapper.Map<List<PostDto>>(posts);
+            var postDtos = _mapper.Map<List<PostDto>>(posts);
+
+            foreach (var postDto in postDtos)
+            {
+                var post = posts.First(p => p.PostId == postDto.PostId);
+
+                postDto.LikesCount = post.Likes.Count();
+                postDto.CommentsCount = post.Comments.Count();
+                postDto.isLikedByMe = post.Likes.Any(l => l.UserId == userId);
+            }
+
+            return ServiceResult<List<PostDto>>.Ok(postDtos);
         }
     }
 }

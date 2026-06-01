@@ -11,7 +11,7 @@ namespace Unstapp.Application.Interfaces
 {
     public interface IPostService
     {
-        Task<List<PostDto>> GetPostsByUserAsync(int userId);
+        Task<ServiceResult<List<PostDto>>> GetPostsByUserAsync(int userId);
         Task<ServiceResult<PostDto>> CreateAsync(int userId, CreatePostDto dto);
         Task<ServiceResult<List<PostDto>>> GetAllAsync(int userId, PostFilter filter);
         Task<ServiceResult<PostDto>> GetByIdAsync(int userId, int postId);
