@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,7 @@ using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
+using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.Application.Services
 {
@@ -65,6 +67,31 @@ namespace Unstapp.Application.Services
             var createdComment = await _commentRepository.GetByIdWithRelationsAsync(comment.CommentId);
 
             return _mapper.Map<CommentResponseDto>(createdComment!);
+        }
+
+        public async Task<ServiceResult<bool>> DeleteAsync(int commentId, int currentUserId)
+        {
+            var comment = await _commentRepository.GetByIdWithRelationsAsync(commentId);
+
+            if (comment == null)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "COMMENT_NOT_FOUND",
+                    "Comentario no encontrado."
+                );
+
+            var isCommentAuthor = comment.UserId == currentUserId;
+            var isPostOwner = comment.Post.UserId == currentUserId;
+
+            if (!isCommentAuthor && !isPostOwner)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status403Forbidden,
+                    "FORBIDDEN_COMMENT_DELETE",
+                    "No tienes permiso para eliminar este comentario."
+                );
+
+            await _commentRepository.DeleteAsync(comment);
+            return ServiceResult<bool>.Ok(true);
         }
     }
 }

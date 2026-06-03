@@ -4,11 +4,13 @@ using System.Security.Claims;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Application.Services;
+using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.API.Controllers
 {
     [ApiController]
     [Route("api/posts/{postId:int}/comments")]
+    [Authorize]
     public class CommentsController : ControllerBase
     {
         private readonly ICommentService _commentsService;
@@ -17,8 +19,6 @@ namespace Unstapp.API.Controllers
         {
             _commentsService = commentService;
         }
-
-        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllByPost(int postId)
         {
@@ -29,8 +29,6 @@ namespace Unstapp.API.Controllers
 
             return Ok(commentsDto);
         }
-
-        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create(int postId, [FromBody] CreateCommentDto dto)
         {
@@ -45,6 +43,27 @@ namespace Unstapp.API.Controllers
             var comment = await _commentsService.AddAsync(postId, userId, dto);
 
             return Ok(comment);
+        }
+
+        [HttpDelete("/api/comments/{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if(!int.TryParse(userIdClaim, out var currentUserId))
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Tóken inválido."
+                });
+
+            var result = await _commentsService.DeleteAsync(id, currentUserId);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return NoContent();
         }
     }
 }

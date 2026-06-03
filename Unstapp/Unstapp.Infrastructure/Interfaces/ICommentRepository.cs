@@ -12,5 +12,6 @@ namespace Unstapp.Infrastructure.Interfaces
         public Task<List<Comment>> GetAllByPostWithRelationsAsync(int postId);
         Task AddAsync(Comment comment);
         Task<Comment?> GetByIdWithRelationsAsync(int commentId);
+        Task DeleteAsync(Comment comment);
     }
 }

@@ -41,5 +41,11 @@ namespace Unstapp.Infrastructure.Repositories
                 .Include(c => c.Post)
                 .FirstOrDefaultAsync(c => c.CommentId == commentId);
         }
+
+        public async Task DeleteAsync(Comment comment)
+        {
+            _context.Comments.Remove(comment);
+            await _context.SaveChangesAsync();
+        }
     }
 }
