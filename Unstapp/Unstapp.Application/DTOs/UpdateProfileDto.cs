@@ -14,5 +14,8 @@ namespace Unstapp.Application.DTOs
         public string? Bio {  get; set; }
         public IFormFile? AvatarFile { get; set; }
         public IFormFile? CoverFile { get; set; }
+        public bool RemoveBio { get; set; } = false;
+        public bool RemoveAvatar { get; set; } = false;
+        public bool RemoveCover { get; set; } = false;
     }
 }

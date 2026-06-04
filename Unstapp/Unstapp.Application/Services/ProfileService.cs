@@ -139,9 +139,15 @@ namespace Unstapp.Application.Services
                 );
 
             if (dto.Bio != null)
-                user.Bio = dto.Bio.Trim();
+            {
+                user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
+            }
+            else if (dto.RemoveBio)
+            {
+                user.Bio = null;
+            }
 
-            if(dto.AvatarFile != null)
+            if (dto.AvatarFile != null)
             {
                 var avatarUpload = await _mediaStorageService.UploadUserAvatarAsync(
                     dto.AvatarFile,
@@ -157,15 +163,20 @@ namespace Unstapp.Application.Services
 
                 user.AvatarUrl = avatarUpload.Data;
             }
+            else if (dto.RemoveAvatar)
+            {
+                user.AvatarUrl = null;
+            }
 
-            if(dto.CoverFile != null)
+
+            if (dto.CoverFile != null)
             {
                 var coverUpload = await _mediaStorageService.UploadUserCoverAsync(
                     dto.CoverFile,
                     currentUserId
                 );
 
-                if(!coverUpload.Success)
+                if (!coverUpload.Success)
                     return ServiceResult<ProfileResponseDto>.Fail(
                         coverUpload.Error!.StatusCode,
                         coverUpload.Error.Code,
@@ -173,6 +184,10 @@ namespace Unstapp.Application.Services
                     );
 
                 user.CoverUrl = coverUpload.Data;
+            }
+            else if (dto.RemoveCover)
+            {
+                user.CoverUrl = null;
             }
 
             await _userRepository.UpdateAsync(user);
