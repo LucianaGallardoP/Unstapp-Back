@@ -49,6 +49,7 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(e => e.Email).IsRequired();
                 entity.Property(e => e.PhoneNumber).IsRequired();
                 entity.Property(e => e.Password).IsRequired();
+                entity.Property(u => u.Bio).HasMaxLength(500);
             });
 
             modelBuilder.Entity<UserRole>(entity =>

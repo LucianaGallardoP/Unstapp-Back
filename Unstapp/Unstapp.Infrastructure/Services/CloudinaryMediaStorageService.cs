@@ -167,7 +167,78 @@ namespace Unstapp.Infrastructure.Services
                     result.Error.Message
                     );
 
-            return ServiceResult<string?>.Ok(result.SecureUrl?.ToString());
+            var url = result.SecureUrl?.ToString();
+
+            if (string.IsNullOrWhiteSpace(url) || !url.StartsWith("https://res.cloudinary.com/"))
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status500InternalServerError,
+                    "INVALID_CLOUDINARY_URL",
+                    "Cloudinary no devolvió una URL válida."
+                );
+
+            return ServiceResult<string?>.Ok(url);
+        }
+
+        public async Task<ServiceResult<string?>> UploadUserCoverAsync(IFormFile file, int userId)
+        {
+            if (file == null || file.Length == 0)
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "FILE_REQUIRED",
+                    "Debe seleccionar una imagen para la portada."
+                );
+
+            var contentType = file.ContentType.ToLower();
+
+            if (!_AllowedImageTypes.Contains(contentType))
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_FILE_TYPE",
+                    "La portada debe ser una imagen JPG, PNG o WEBP"
+                );
+
+            if(file.Length > MaxImageSize)
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status413PayloadTooLarge,
+                    "FILE_TOO_LARGE",
+                    "La portada no puede superar los 5MB."
+                );
+
+            await using var stream = file.OpenReadStream();
+
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription($"cover_user_{userId}", stream),
+                Folder = "unstapp/users/covers",
+                PublicId = $"user_{userId}_cover",
+                Overwrite = true,
+                Transformation = new Transformation()
+                    .Width(1200)
+                    .Height(400)
+                    .Crop("fill")
+                    .Quality("auto")
+                    .FetchFormat("auto")
+            };
+
+            var result = await _cloudinary.UploadAsync(uploadParams);
+
+            if (result.Error != null)
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status500InternalServerError,
+                    "MEDIA_UPLOAD_FAILED",
+                    result.Error.Message
+                );
+
+            var url = result.SecureUrl?.ToString();
+
+            if (string.IsNullOrWhiteSpace(url) || !url.StartsWith("https://res.cloudinary.com/"))
+                return ServiceResult<string?>.Fail(
+                    StatusCodes.Status500InternalServerError,
+                    "INVALID_CLOUDINARY_URL",
+                    "Cloudinary no devolvió una URL válida."
+                );
+
+            return ServiceResult<string?>.Ok(url);
         }
     }
 }

@@ -11,5 +11,6 @@ namespace Unstapp.Shared.Interfaces
     {
         Task<ServiceResult<string?>> UploadPostMediaAsync(IFormFile file, int userId);
         Task<ServiceResult<string?>> UploadUserAvatarAsync(IFormFile file, int userId);
+        Task<ServiceResult<string?>> UploadUserCoverAsync(IFormFile file, int userId);
     }
 }

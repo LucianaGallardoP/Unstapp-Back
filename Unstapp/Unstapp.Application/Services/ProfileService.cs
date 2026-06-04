@@ -9,6 +9,7 @@ using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Interfaces;
 
 namespace Unstapp.Application.Services
 {
@@ -16,13 +17,16 @@ namespace Unstapp.Application.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IUserFollowRepository _userFollowRepository;
+        private readonly IMediaStorageService _mediaStorageService;
 
         public ProfileService(
             IUserRepository userRepository,
-            IUserFollowRepository userFollowRepository)
+            IUserFollowRepository userFollowRepository,
+            IMediaStorageService mediaStorageService)
         {
             _userRepository = userRepository;
             _userFollowRepository = userFollowRepository;
+            _mediaStorageService = mediaStorageService;
         }
 
         public async Task<ServiceResult<ProfileResponseDto>> GetProfileAsync(
@@ -119,6 +123,75 @@ namespace Unstapp.Application.Services
                 IsFollowing = true,
                 Message = "Comenzaste a seguir a este perfil."
             });
+        }
+
+        public async Task<ServiceResult<ProfileResponseDto>> UpdateProfileAsync(
+            int currentUserId,
+            UpdateProfileDto dto)
+        {
+            var user = await _userRepository.GetProfileByIdAsync(currentUserId);
+
+            if (user == null)
+                return ServiceResult<ProfileResponseDto>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "USER_NOT_FOUND",
+                    "Usuario no encontrado."
+                );
+
+            if (dto.Bio != null)
+                user.Bio = dto.Bio.Trim();
+
+            if(dto.AvatarFile != null)
+            {
+                var avatarUpload = await _mediaStorageService.UploadUserAvatarAsync(
+                    dto.AvatarFile,
+                    currentUserId
+                );
+
+                if (!avatarUpload.Success)
+                    return ServiceResult<ProfileResponseDto>.Fail(
+                        avatarUpload.Error!.StatusCode,
+                        avatarUpload.Error.Code,
+                        avatarUpload.Error.Message
+                    );
+
+                user.AvatarUrl = avatarUpload.Data;
+            }
+
+            if(dto.CoverFile != null)
+            {
+                var coverUpload = await _mediaStorageService.UploadUserCoverAsync(
+                    dto.CoverFile,
+                    currentUserId
+                );
+
+                if(!coverUpload.Success)
+                    return ServiceResult<ProfileResponseDto>.Fail(
+                        coverUpload.Error!.StatusCode,
+                        coverUpload.Error.Code,
+                        coverUpload.Error.Message
+                    );
+
+                user.CoverUrl = coverUpload.Data;
+            }
+
+            await _userRepository.UpdateAsync(user);
+
+            var response = new ProfileResponseDto
+            {
+                UserId = user.UserId,
+                FullName = $"{user.Name} {user.LastName}".Trim(),
+                Careers = user.UserCareers
+                    .Select(uc => uc.Career.Name)
+                    .ToList(),
+                Bio = user.Bio,
+                AvatarUrl = user.AvatarUrl,
+                CoverUrl = user.CoverUrl,
+                IsOwnProfile = true,
+                IsFollowing = false
+            };
+
+            return ServiceResult<ProfileResponseDto>.Ok(response);
         }
 
     }
