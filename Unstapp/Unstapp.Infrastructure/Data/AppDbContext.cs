@@ -24,6 +24,7 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<Faculty> Faculties => Set<Faculty>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<UserFollow> UserFollow => Set<UserFollow>();
+        public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -116,7 +117,7 @@ namespace Unstapp.Infrastructure.Data
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(e => new {e.PostId, e.UserId })
+                entity.HasIndex(e => new { e.PostId, e.UserId })
                     .IsUnique();
             });
 
@@ -221,6 +222,18 @@ namespace Unstapp.Infrastructure.Data
 
                 entity.Property(uf => uf.FollowedAt)
                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            });
+
+            modelBuilder.Entity<CalendarEvent>(entity =>
+            {
+                entity.HasKey(e => e.CalendarEventId);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.Type).HasConversion<string>().IsRequired();
+                entity.Property(e => e.StartDate).IsRequired();
+                entity.Property(e => e.EndDate).IsRequired();
+                entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
         }
     }
