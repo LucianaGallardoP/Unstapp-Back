@@ -37,7 +37,7 @@ namespace Unstapp.API.Controllers
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if(!int.TryParse(userIdClaim, out var currentUserId))
+            if (!int.TryParse(userIdClaim, out var currentUserId))
                 return Unauthorized(
                     new ApiErrorResponse
                     {
@@ -61,6 +61,17 @@ namespace Unstapp.API.Controllers
                 },
                 result.Data
             );
+        }
+
+        [HttpGet("daily")]
+        public async Task<IActionResult> GetTodayEvents()
+        {
+            var result = await _calendarService.GetTodayEventsAsync();
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(result.Data);
         }
     }
 }

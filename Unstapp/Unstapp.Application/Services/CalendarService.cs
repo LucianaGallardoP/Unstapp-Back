@@ -41,8 +41,15 @@ namespace Unstapp.Application.Services
                     "La fecha de inicio no puede ser mayor que la fecha de fin."
                 );
 
-            var events = await _calendarEventRepository.GetEventsByRangeAsync(start, end);
+            var startDateArgentina = start.Date;
+            var endExclusiveArgentina = end.Date.AddDays(1);
+
+            var startUtc = ConvertArgentinaLocalToUtc(startDateArgentina);
+            var endUtc = ConvertArgentinaLocalToUtc(endExclusiveArgentina);
+
+            var events = await _calendarEventRepository.GetEventsByRangeAsync(startUtc, endUtc);
             var eventsDto = _mapper.Map<List<CalendarEventDto>>(events);
+
             var response = new CalendarEventsResponseDto
             {
                 Events = eventsDto,
@@ -55,7 +62,12 @@ namespace Unstapp.Application.Services
                     Feriados = events.Count(e => e.Type == CalendarEventType.Feriado)
                 },
                 EventDays = events
-                    .Select(e => DateOnly.FromDateTime(e.StartDate))
+                    .Select(e =>
+                    {
+                        var argentinaTimeZone = GetArgentinaTimeZone();
+                        var argentinaDate = TimeZoneInfo.ConvertTimeFromUtc(e.StartDate, argentinaTimeZone);
+                        return DateOnly.FromDateTime(argentinaDate);
+                    })
                     .Distinct()
                     .OrderBy(d => d)
                     .ToList()
@@ -84,20 +96,23 @@ namespace Unstapp.Application.Services
                     "El título es obligatorio."
                 );
 
-            if(dto.StartDate > dto.EndDate)
+            if (dto.StartDate > dto.EndDate)
                 return ServiceResult<CalendarEventDto>.Fail(
                     StatusCodes.Status400BadRequest,
                     "INVALID_DATE_RANGE",
                     "La fecha de inicio no puede ser mayor a la fecha de fin."
                 );
 
+            var startUtc = ConvertArgentinaLocalToUtc(dto.StartDate);
+            var endUtc = ConvertArgentinaLocalToUtc(dto.EndDate);
+
             var calendarEvent = new CalendarEvent
             {
                 Title = dto.Title.Trim(),
-                Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description,
+                Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
                 Type = dto.Type,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
+                StartDate = startUtc,
+                EndDate = endUtc,
                 IsDeleted = false,
                 CreatedAt = DateTime.UtcNow,
             };
@@ -107,6 +122,26 @@ namespace Unstapp.Application.Services
             var responseDto = _mapper.Map<CalendarEventDto>(calendarEvent);
 
             return ServiceResult<CalendarEventDto>.Ok(responseDto);
+        }
+
+        public async Task<ServiceResult<List<CalendarEventDto>>> GetTodayEventsAsync()
+        {
+            var argentinaNow = GetArgentinaNow();
+
+            var todayArgentina = argentinaNow.Date;
+
+            var todayUtc = ConvertArgentinaLocalToUtc(todayArgentina);
+
+            var result = await GetEventsByRangeAsync(todayUtc, todayUtc);
+
+            if (!result.Success)
+                return ServiceResult<List<CalendarEventDto>>.Fail(
+                    result.Error!.StatusCode,
+                    result.Error.Code,
+                    result.Error.Message
+                );
+
+            return ServiceResult<List<CalendarEventDto>>.Ok(result.Data!.Events);
         }
 
         private static bool CanCreateCalendarEvent(List<string> roles)
@@ -122,6 +157,33 @@ namespace Unstapp.Application.Services
             return roles.Any(role =>
                 allowedRoles.Any(allowed =>
                     allowed.Equals(role, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        private static TimeZoneInfo GetArgentinaTimeZone()
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById("Argentina Standard Time");
+            }
+        }
+
+        private static DateTime ConvertArgentinaLocalToUtc(DateTime argentinaLocalDateTime)
+        {
+            var argentinaTimeZone = GetArgentinaTimeZone();
+            var unespecifiedTime = DateTime.SpecifyKind(argentinaLocalDateTime, DateTimeKind.Unspecified);
+
+            return TimeZoneInfo.ConvertTimeToUtc(unespecifiedTime, argentinaTimeZone);
+        }
+
+        private static DateTime GetArgentinaNow()
+        {
+            var argentinaTimeZone = GetArgentinaTimeZone();
+
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, argentinaTimeZone);
         }
     }
 }

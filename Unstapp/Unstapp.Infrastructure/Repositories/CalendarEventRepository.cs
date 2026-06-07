@@ -25,7 +25,7 @@ namespace Unstapp.Infrastructure.Repositories
                 .AsNoTracking()
                 .Where(e =>
                     !e.IsDeleted &&
-                    e.StartDate <= end &&
+                    e.StartDate < end &&
                     e.EndDate >= start)
                 .OrderBy(e => e.StartDate)
                 .ToListAsync();
