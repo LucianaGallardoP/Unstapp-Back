@@ -21,8 +21,8 @@ namespace Unstapp.Infrastructure.Entities
 
         public NotificationActionType ActionType { get; set; }
 
-        public int PostId { get; set; }
-        public Post Post { get; set; } = null!;
+        public int? PostId { get; set; }
+        public Post? Post { get; set; } = null!;
 
         public bool IsPriority { get; set; } = false;
 

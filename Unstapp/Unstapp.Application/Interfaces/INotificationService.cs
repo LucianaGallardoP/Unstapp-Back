@@ -12,6 +12,7 @@ namespace Unstapp.Application.Interfaces
     {
         Task CreateLikeNotificationAsync(int actorUserId, int postId);
         Task CreateCommentNotificationAsync(int actorUserId, int postId);
+        Task CreateFollowNotificationAsync(int actorUserId, int followedUserId);
         Task<ServiceResult<List<NotificationResponseDto>>> GetMyNotificationsAsync(int userId);
         Task<ServiceResult<bool>> MarkAsReadAsync(int userId, int notificationId);
         Task<ServiceResult<bool>> DeleteAsync(int userId, int notificationId);

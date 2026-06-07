@@ -18,15 +18,18 @@ namespace Unstapp.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IUserFollowRepository _userFollowRepository;
         private readonly IMediaStorageService _mediaStorageService;
+        private readonly INotificationService _notificationService;
 
         public ProfileService(
             IUserRepository userRepository,
             IUserFollowRepository userFollowRepository,
-            IMediaStorageService mediaStorageService)
+            IMediaStorageService mediaStorageService,
+            INotificationService notificationService)
         {
             _userRepository = userRepository;
             _userFollowRepository = userFollowRepository;
             _mediaStorageService = mediaStorageService;
+            _notificationService = notificationService;
         }
 
         public async Task<ServiceResult<ProfileResponseDto>> GetProfileAsync(
@@ -116,6 +119,11 @@ namespace Unstapp.Application.Services
 
             await _userFollowRepository.AddAsync(follow);
             await _userFollowRepository.SaveChangesAsync();
+
+            await _notificationService.CreateFollowNotificationAsync(
+                actorUserId: followerUserId,
+                followedUserId: followedUserId
+            );
 
             return ServiceResult<FollowToggleResponseDto>.Ok(new FollowToggleResponseDto
             {

@@ -9,6 +9,7 @@ namespace Unstapp.Infrastructure.Entities.Enums
     public enum NotificationActionType
     {
         Like = 1,
-        Comment = 2
+        Comment = 2,
+        Follow = 3
     }
 }

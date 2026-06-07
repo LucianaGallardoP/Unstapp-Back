@@ -11,6 +11,7 @@ using Unstapp.Infrastructure.Entities.Enums;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 
+
 namespace Unstapp.Application.Services
 {
     public class NotificationService : INotificationService
@@ -18,15 +19,18 @@ namespace Unstapp.Application.Services
         private readonly INotificationRepository _notificationRepository;
         private readonly IPostRepository _postRepository;
         private readonly IUserRepository _userRepository;
+        private readonly INotificationRealtimeSender _notificationRealtimeSender;
 
         public NotificationService(
             INotificationRepository notificationRepository,
             IPostRepository postRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            INotificationRealtimeSender notificationRealtimeSender)
         {
             _notificationRepository = notificationRepository;
             _postRepository = postRepository;
             _userRepository = userRepository;
+            _notificationRealtimeSender = notificationRealtimeSender;
         }
 
         public async Task CreateLikeNotificationAsync(int actorUserId, int postId)
@@ -133,6 +137,51 @@ namespace Unstapp.Application.Services
             return ServiceResult<bool>.Ok(hasUnread);
         }
 
+        public async Task CreateFollowNotificationAsync(int actorUserId, int followedUserId)
+        {
+            if(actorUserId == followedUserId)
+                return;
+
+            var actor = await _userRepository.GetByIdAsync(actorUserId);
+
+            if(actor == null)
+                return;
+
+            var followedUser = await _userRepository.GetByIdAsync(followedUserId);
+
+            if(followedUser == null)
+                return;
+
+            var actorUserName = $"{actor.Name} {actor.LastName}".Trim();
+
+            var notification = new Notification
+            {
+                RecipientUserId = followedUserId,
+                ActorUserId = actorUserId,
+                ActorUserName = actorUserName,
+                ActionType = NotificationActionType.Follow,
+                IsPriority = false,
+                IsRead = false,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+            };
+
+            await _notificationRepository.AddAsync(notification);
+
+            var notificationDto = new NotificationResponseDto
+            {
+                NotificationId = notification.NotificationId,
+                User = notification.ActorUserName,
+                Action = GetActionText(notification.ActionType),
+                IsPriority = notification.IsPriority,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt,
+                Message = $"{notification.ActorUserName} {GetActionText(notification.ActionType)}"
+            };
+
+            await _notificationRealtimeSender.SendNotificationAsync(followedUserId, notificationDto);
+        }
+
         private async Task<Notification?> CreateNotification(
             int actorUserId,
             int postId,
@@ -175,6 +224,7 @@ namespace Unstapp.Application.Services
             {
                 NotificationActionType.Like => "dio me gusta a tu post",
                 NotificationActionType.Comment => "comentó en tu post",
+                NotificationActionType.Follow => "comenzó a seguirte",
                 _ => "interactuó con tu post"
             };
         }
