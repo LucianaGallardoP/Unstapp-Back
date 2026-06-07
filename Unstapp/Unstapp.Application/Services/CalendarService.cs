@@ -80,13 +80,13 @@ namespace Unstapp.Application.Services
         {
             var roles = await _userRepository.GetRoleNameByUserIdAsync(currentUserId);
 
-            var canCreateCalendarEvent = CanCreateCalendarEvent(roles);
+            var canCreateCalendarEvent = CanCreateCalendarEvent(roles, dto.Type);
 
             if (!canCreateCalendarEvent)
                 return ServiceResult<CalendarEventDto>.Fail(
                     StatusCodes.Status403Forbidden,
                     "FORBIDDEN_CALENDAR_EVENT_CREATE",
-                    "No tienes permisos para crear eventos en el calendario."
+                    "No tienes permisos para crear este tipo de evento en el calendario."
                 );
 
             if (string.IsNullOrWhiteSpace(dto.Title))
@@ -130,9 +130,7 @@ namespace Unstapp.Application.Services
 
             var todayArgentina = argentinaNow.Date;
 
-            var todayUtc = ConvertArgentinaLocalToUtc(todayArgentina);
-
-            var result = await GetEventsByRangeAsync(todayUtc, todayUtc);
+            var result = await GetEventsByRangeAsync(todayArgentina, todayArgentina);
 
             if (!result.Success)
                 return ServiceResult<List<CalendarEventDto>>.Fail(
@@ -144,9 +142,22 @@ namespace Unstapp.Application.Services
             return ServiceResult<List<CalendarEventDto>>.Ok(result.Data!.Events);
         }
 
-        private static bool CanCreateCalendarEvent(List<string> roles)
+        private static bool CanCreateCalendarEvent(List<string> roles, CalendarEventType eventType)
         {
-            var allowedRoles = new[]
+            if(HasAdministrativeRoles(roles))
+                return true;
+
+            if(HasTeacherRoles(roles))
+            {
+                return eventType == CalendarEventType.Clase ||
+                    eventType == CalendarEventType.Examen;
+            }
+            return false;
+        }
+
+        private static bool HasAdministrativeRoles(List<string> roles)
+        {
+            var administrativeRoles = new[]
             {
                 "Admin",
                 "Administrador",
@@ -155,7 +166,19 @@ namespace Unstapp.Application.Services
             };
 
             return roles.Any(role =>
-                allowedRoles.Any(allowed =>
+                administrativeRoles.Any(allowed =>
+                    allowed.Equals(role, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        private static bool HasTeacherRoles(List<string> roles)
+        {
+            var teacherRoles = new[]
+            {
+                "Docente",
+                "Profesor"
+            };
+            return roles.Any(role =>
+                teacherRoles.Any(allowed =>
                     allowed.Equals(role, StringComparison.OrdinalIgnoreCase)));
         }
 
