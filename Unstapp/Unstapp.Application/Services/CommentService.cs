@@ -18,17 +18,20 @@ namespace Unstapp.Application.Services
         private readonly ICommentRepository _commentRepository;
         private readonly IPostRepository _postRepository;
         private readonly INotificationService _notificationService;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
 
         public CommentService(
             ICommentRepository commentRepository,
             IPostRepository postRepository,
             INotificationService notificationService,
+            IUserRepository userRepository,
             IMapper mapper)
         {
             _commentRepository = commentRepository;
             _postRepository = postRepository;
             _notificationService = notificationService;
+            _userRepository = userRepository;
             _mapper = mapper;
         }
 
@@ -80,10 +83,18 @@ namespace Unstapp.Application.Services
                     "Comentario no encontrado."
                 );
 
+            var roles = await _userRepository.GetRoleNameByUserIdAsync(currentUserId);
+
+            var isAdmin = roles.Any(role =>
+                role.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
+                role.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
+                role.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
+                role.Equals("Administrativo", StringComparison.OrdinalIgnoreCase));
+
             var isCommentAuthor = comment.UserId == currentUserId;
             var isPostOwner = comment.Post.UserId == currentUserId;
 
-            if (!isCommentAuthor && !isPostOwner)
+            if (!isCommentAuthor && !isPostOwner && !isAdmin)
                 return ServiceResult<bool>.Fail(
                     StatusCodes.Status403Forbidden,
                     "FORBIDDEN_COMMENT_DELETE",
