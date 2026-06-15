@@ -22,6 +22,70 @@ namespace Unstapp.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.CalendarEvent", b =>
+                {
+                    b.Property<int>("CalendarEventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CalendarEventId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("CalendarEventId");
+
+                    b.ToTable("CalendarEvents");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.Career", b =>
+                {
+                    b.Property<int>("CareerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CareerId"));
+
+                    b.Property<int>("FacultyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("CareerId");
+
+                    b.HasIndex("FacultyId");
+
+                    b.ToTable("Careers");
+                });
+
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Comment", b =>
                 {
                     b.Property<int>("CommentId")
@@ -32,7 +96,13 @@ namespace Unstapp.Infrastructure.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("PostId")
                         .HasColumnType("integer");
@@ -47,6 +117,23 @@ namespace Unstapp.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.Faculty", b =>
+                {
+                    b.Property<int>("FacultyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FacultyId"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("FacultyId");
+
+                    b.ToTable("Faculties");
                 });
 
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Like", b =>
@@ -65,11 +152,68 @@ namespace Unstapp.Infrastructure.Migrations
 
                     b.HasKey("LikeId");
 
-                    b.HasIndex("PostId");
-
                     b.HasIndex("UserId");
 
+                    b.HasIndex("PostId", "UserId")
+                        .IsUnique();
+
                     b.ToTable("Likes");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.Notification", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("NotificationId"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ActorUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ActorUserName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsPriority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int?>("PostId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RecipientUserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("RecipientUserId");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Post", b =>
@@ -80,9 +224,18 @@ namespace Unstapp.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PostId"));
 
-                    b.Property<string>("Content")
+                    b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("Content")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("MediaUrl")
                         .HasColumnType("text");
@@ -103,6 +256,21 @@ namespace Unstapp.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Posts");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.PostCareer", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CareerId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("PostId", "CareerId");
+
+                    b.HasIndex("CareerId");
+
+                    b.ToTable("PostCareers");
                 });
 
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Role", b =>
@@ -130,10 +298,17 @@ namespace Unstapp.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserId"));
 
-                    b.Property<byte[]>("Avatar")
-                        .HasColumnType("bytea");
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("text");
 
                     b.Property<string>("Bio")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Biography")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CoverUrl")
                         .HasColumnType("text");
 
                     b.Property<string>("DNI")
@@ -168,6 +343,41 @@ namespace Unstapp.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.UserCareer", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CareerId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "CareerId");
+
+                    b.HasIndex("CareerId");
+
+                    b.ToTable("UserCareers");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.UserFollow", b =>
+                {
+                    b.Property<int>("FollowerUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FollowedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FollowedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("FollowerUserId", "FollowedUserId");
+
+                    b.HasIndex("FollowedUserId");
+
+                    b.ToTable("UserFollow");
+                });
+
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.UserRole", b =>
                 {
                     b.Property<int>("UserRoleId")
@@ -190,6 +400,17 @@ namespace Unstapp.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("UserRoles");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.Career", b =>
+                {
+                    b.HasOne("Unstapp.Infrastructure.Entities.Faculty", "Faculty")
+                        .WithMany("Careers")
+                        .HasForeignKey("FacultyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Faculty");
                 });
 
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Comment", b =>
@@ -230,6 +451,32 @@ namespace Unstapp.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.Notification", b =>
+                {
+                    b.HasOne("Unstapp.Infrastructure.Entities.User", "ActorUser")
+                        .WithMany("SentNotifications")
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Unstapp.Infrastructure.Entities.Post", "Post")
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Unstapp.Infrastructure.Entities.User", "RecipientUser")
+                        .WithMany("ReceivedNotifications")
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ActorUser");
+
+                    b.Navigation("Post");
+
+                    b.Navigation("RecipientUser");
+                });
+
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Post", b =>
                 {
                     b.HasOne("Unstapp.Infrastructure.Entities.User", "User")
@@ -239,6 +486,63 @@ namespace Unstapp.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.PostCareer", b =>
+                {
+                    b.HasOne("Unstapp.Infrastructure.Entities.Career", "Career")
+                        .WithMany("PostCareers")
+                        .HasForeignKey("CareerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unstapp.Infrastructure.Entities.Post", "Post")
+                        .WithMany("PostCareers")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Career");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.UserCareer", b =>
+                {
+                    b.HasOne("Unstapp.Infrastructure.Entities.Career", "Career")
+                        .WithMany("UserCareers")
+                        .HasForeignKey("CareerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unstapp.Infrastructure.Entities.User", "User")
+                        .WithMany("UserCareers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Career");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.UserFollow", b =>
+                {
+                    b.HasOne("Unstapp.Infrastructure.Entities.User", "FollowedUser")
+                        .WithMany("Followers")
+                        .HasForeignKey("FollowedUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Unstapp.Infrastructure.Entities.User", "FollowerUser")
+                        .WithMany("Following")
+                        .HasForeignKey("FollowerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FollowedUser");
+
+                    b.Navigation("FollowerUser");
                 });
 
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.UserRole", b =>
@@ -260,11 +564,25 @@ namespace Unstapp.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.Career", b =>
+                {
+                    b.Navigation("PostCareers");
+
+                    b.Navigation("UserCareers");
+                });
+
+            modelBuilder.Entity("Unstapp.Infrastructure.Entities.Faculty", b =>
+                {
+                    b.Navigation("Careers");
+                });
+
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
+
+                    b.Navigation("PostCareers");
                 });
 
             modelBuilder.Entity("Unstapp.Infrastructure.Entities.Role", b =>
@@ -276,9 +594,19 @@ namespace Unstapp.Infrastructure.Migrations
                 {
                     b.Navigation("Comments");
 
+                    b.Navigation("Followers");
+
+                    b.Navigation("Following");
+
                     b.Navigation("Likes");
 
                     b.Navigation("Posts");
+
+                    b.Navigation("ReceivedNotifications");
+
+                    b.Navigation("SentNotifications");
+
+                    b.Navigation("UserCareers");
 
                     b.Navigation("UserRoles");
                 });
