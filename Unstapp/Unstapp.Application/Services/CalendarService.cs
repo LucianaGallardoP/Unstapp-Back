@@ -142,6 +142,22 @@ namespace Unstapp.Application.Services
             return ServiceResult<List<CalendarEventDto>>.Ok(result.Data!.Events);
         }
 
+        public async Task<ServiceResult<List<CalendarEventDto>>> GetEventsByDayAsync(DateTime date)
+        {
+            var dayArgentina = date.Date;
+
+            var result = await GetEventsByRangeAsync(dayArgentina, dayArgentina);
+
+            if(!result.Success)
+                return ServiceResult<List<CalendarEventDto>>.Fail(
+                    result.Error!.StatusCode,
+                    result.Error.Code,
+                    result.Error.Message
+                );
+
+            return ServiceResult<List<CalendarEventDto>>.Ok(result.Data!.Events);
+        }
+
         private static bool CanCreateCalendarEvent(List<string> roles, CalendarEventType eventType)
         {
             if(HasAdministrativeRoles(roles))

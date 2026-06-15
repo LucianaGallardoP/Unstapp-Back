@@ -73,5 +73,16 @@ namespace Unstapp.API.Controllers
 
             return Ok(result.Data);
         }
+
+        [HttpGet("events/day")]
+        public async Task<IActionResult> GetEventsByDay([FromQuery] DateTime date)
+        {
+            var result = await _calendarService.GetEventsByDayAsync(date);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(result.Data);
+        }
     }
 }

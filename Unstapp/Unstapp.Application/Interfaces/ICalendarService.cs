@@ -17,5 +17,6 @@ namespace Unstapp.Application.Interfaces
             CreateCalendarEventDto dto,
             int currentUserId);
         Task<ServiceResult<List<CalendarEventDto>>> GetTodayEventsAsync();
+        Task<ServiceResult<List<CalendarEventDto>>> GetEventsByDayAsync(DateTime date);
     }
 }
