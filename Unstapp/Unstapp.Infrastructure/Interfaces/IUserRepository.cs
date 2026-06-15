@@ -20,5 +20,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<ProfileMetricsDto> GetProfileMetricsAsync(int userId);
         Task<bool> ExistsAsync(int userId);
         Task UpdateAsync(User user);
+        Task<User?> GetUserContextByIdAsync(int userId);
     }
 }

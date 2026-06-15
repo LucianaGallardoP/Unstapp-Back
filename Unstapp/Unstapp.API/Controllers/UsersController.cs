@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Unstapp.Application.Interfaces;
 using Unstapp.Application.Services;
@@ -8,15 +9,21 @@ namespace Unstapp.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly IProfileService _profileService;
         private readonly IPostService _postService;
+        private readonly IUserService _userService;
 
-        public UsersController(IProfileService profileService, IPostService postService)
+        public UsersController(
+            IProfileService profileService,
+            IPostService postService,
+            IUserService userService)
         {
             _profileService = profileService;
             _postService = postService;
+            _userService = userService;
         }
 
         [HttpPost("{id:int}/follow")]
@@ -56,6 +63,27 @@ namespace Unstapp.API.Controllers
                 });
 
             var result = await _postService.GetPostsByUserAsync(id);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(result.Data);
+        }
+
+        [HttpGet("me/context")]
+        public async Task<IActionResult> GetMyContext()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if(!int.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token Inválido."
+                });
+            
+            var result = await _userService.GetUserContextAsync(userId);
 
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
