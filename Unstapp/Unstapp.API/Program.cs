@@ -129,6 +129,10 @@ builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<INotificationRealtimeSender, NotificationRealtimeSender>();
 builder.Services.AddScoped<IUserService, UserService>();
 
+// NUEVO
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<ICareerAdminService, CareerAdminService>();
+
 var port = Environment.GetEnvironmentVariable("PORT");
 if(!string.IsNullOrWhiteSpace(port))
 {
