@@ -25,6 +25,7 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<UserFollow> UserFollow => Set<UserFollow>();
         public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
+        public DbSet<FirstLoginToken> FirstLoginTokens => Set<FirstLoginToken>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -234,6 +235,22 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(e => e.EndDate).IsRequired();
                 entity.Property(e => e.IsDeleted).HasDefaultValue(false);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            });
+
+            modelBuilder.Entity<FirstLoginToken>(entity =>
+            {
+                entity.HasKey(e => e.FirstLoginTokenId);
+                entity.Property(e => e.TokenHash).IsRequired();
+                entity.Property(e => e.ExpiresAt).IsRequired();
+                entity.Property(e => e.Used).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TokenHash);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

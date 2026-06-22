@@ -112,5 +112,15 @@ namespace Unstapp.Infrastructure.Repositories
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<User?> GetUserContextByIdAsync(int userId)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .Include(u => u.UserCareers)
+                    .ThenInclude(uc => uc.Career)
+                        .ThenInclude(c => c.Faculty)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+        }
     }
 }

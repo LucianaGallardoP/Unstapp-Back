@@ -34,5 +34,31 @@ namespace Unstapp.API.Controllers
             await _authService.RegisterAsync(dto);
             return Ok();
         }
+
+        [HttpPost("verify-first-time")]
+        public async Task<IActionResult> VerifyFirstTime(VerifyFirstTimeRequestDto dto)
+        {
+            var result = await _authService.VerifyFirstTimeAsync(dto);
+
+            if (!result.Success)
+            {
+                return StatusCode(result.Error!.StatusCode, result.Error);
+            }
+
+            return Ok(result.Data);
+        }
+
+        [HttpPost("set-initial-password")]
+        public async Task<IActionResult> SetInitialPassword(SetInitialPasswordRequestDto dto)
+        {
+            var result = await _authService.SetInitialPasswordAsync(dto);
+
+            if (!result.Success)
+            {
+                return StatusCode(result.Error!.StatusCode, result.Error);
+            }
+
+            return Ok(result.Data);
+        }
     }
 }
