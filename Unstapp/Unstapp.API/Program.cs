@@ -131,6 +131,8 @@ builder.Services.AddScoped<ICalendarEventRepository, CalendarEventRepository>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<INotificationRealtimeSender, NotificationRealtimeSender>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<ICareerAdminService, CareerAdminService>();
 
 var port = Environment.GetEnvironmentVariable("PORT");
 if(!string.IsNullOrWhiteSpace(port))
