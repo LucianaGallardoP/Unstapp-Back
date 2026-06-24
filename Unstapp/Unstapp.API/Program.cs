@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Unstapp.Application.Interfaces;
 using Unstapp.Application.Mappings;
+using Unstapp.Application.Seeding;
 using Unstapp.Application.Services;
 using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Interfaces;
@@ -113,6 +114,8 @@ builder.Services.AddScoped<IMediaStorageService, CloudinaryMediaStorageService>(
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IFirstLoginTokenRepository, FirstLoginTokenRepository>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ILikeRepository, LikeRepository>();
@@ -128,8 +131,6 @@ builder.Services.AddScoped<ICalendarEventRepository, CalendarEventRepository>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<INotificationRealtimeSender, NotificationRealtimeSender>();
 builder.Services.AddScoped<IUserService, UserService>();
-
-// NUEVO
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<ICareerAdminService, CareerAdminService>();
 
@@ -162,6 +163,15 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    if (app.Configuration.GetValue<bool>("SeedStudents"))
+    {
+        var seedLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("StudentSeeder");
+        var testStudentEmail = app.Configuration["Seed:TestStudentEmail"];
+        var testStudentDni = app.Configuration["Seed:TestStudentDni"];
+        await StudentSeeder.SeedAsync(db, seedLogger, testStudentEmail, testStudentDni);
+    }
 }
 
 // Configure the HTTP request pipeline.

@@ -25,8 +25,7 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<UserFollow> UserFollow => Set<UserFollow>();
         public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
-
-        // NUEVO
+        public DbSet<FirstLoginToken> FirstLoginTokens => Set<FirstLoginToken>();
         public DbSet<Unstapp.Infrastructure.Entities.Schedule> Schedules => Set<Unstapp.Infrastructure.Entities.Schedule>();
 
 
@@ -239,7 +238,21 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
 
-            // NUEVO
+            modelBuilder.Entity<FirstLoginToken>(entity =>
+            {
+                entity.HasKey(e => e.FirstLoginTokenId);
+                entity.Property(e => e.TokenHash).IsRequired();
+                entity.Property(e => e.ExpiresAt).IsRequired();
+                entity.Property(e => e.Used).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TokenHash);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
             modelBuilder.Entity<Unstapp.Infrastructure.Entities.Schedule>(entity =>
              {
                  entity.HasKey(s => s.Id);
