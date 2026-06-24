@@ -16,5 +16,6 @@ namespace Unstapp.Infrastructure.Entities
 
         public ICollection<UserCareer> UserCareers { get; set; } = new List<UserCareer>();
         public ICollection<PostCareer> PostCareers { get; set; } = new List<PostCareer>();
+        public ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
     }
 }

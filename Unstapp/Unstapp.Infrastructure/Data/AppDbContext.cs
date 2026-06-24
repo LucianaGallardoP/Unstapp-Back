@@ -26,7 +26,7 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<UserFollow> UserFollow => Set<UserFollow>();
         public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
         public DbSet<FirstLoginToken> FirstLoginTokens => Set<FirstLoginToken>();
-        public DbSet<Unstapp.Infrastructure.Entities.Schedule> Schedules => Set<Unstapp.Infrastructure.Entities.Schedule>();
+        public DbSet<Schedule> Schedules => Set<Schedule>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -264,7 +264,7 @@ namespace Unstapp.Infrastructure.Data
                  entity.Property(s => s.Classroom).IsRequired().HasMaxLength(50);
 
                  entity.HasOne(s => s.Career)
-                     .WithMany()
+                     .WithMany(c => c.Schedules)
                      .HasForeignKey(s => s.CareerId)
                      .OnDelete(DeleteBehavior.Cascade);
              });
