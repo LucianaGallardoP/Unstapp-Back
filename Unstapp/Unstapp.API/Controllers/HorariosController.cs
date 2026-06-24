@@ -1,10 +1,9 @@
-using System;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
+using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.API.Controllers
 {
@@ -32,17 +31,19 @@ namespace Unstapp.API.Controllers
             {
 
                 if (!User.IsInRole("Administracion"))
-                {
-
-                    return StatusCode(403, new { mensaje = "Acceso denegado: Se requieren permisos de Administrador." });
-                }
+                    return StatusCode(StatusCodes.Status403Forbidden,
+                        new ApiErrorResponse
+                        {
+                            StatusCode = StatusCodes.Status403Forbidden,
+                            Code = "ACCESS_DENIED",
+                            Message = "Acceso denegado: Se requieren permisos de Administrador."
+                        }
+                    );
 
                 var adminResult = await _scheduleService.GetSchedulesByCareerAsync(careerId.Value, dia);
 
                 if (!adminResult.Success)
-                {
-                    return StatusCode(adminResult.Error!.StatusCode, new { mensaje = adminResult.Error.Message });
-                }
+                    return StatusCode(adminResult.Error!.StatusCode, adminResult.Error);
 
                 return Ok(adminResult.Data);
             }
@@ -50,16 +51,17 @@ namespace Unstapp.API.Controllers
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdClaim, out int userId))
-            {
-                return Unauthorized(new { mensaje = "Token de usuario inválido o expirado." });
-            }
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
 
             var studentResult = await _scheduleService.GetSchedulesByDayAsync(userId, dia);
 
             if (!studentResult.Success)
-            {
-                return StatusCode(studentResult.Error!.StatusCode, new { mensaje = studentResult.Error.Message });
-            }
+                return StatusCode(studentResult.Error!.StatusCode, studentResult.Error);
 
             return Ok(studentResult.Data);
         }
@@ -69,21 +71,13 @@ namespace Unstapp.API.Controllers
         [Authorize(Roles = "Administracion")]
         public async Task<IActionResult> CreateHorario([FromBody] ScheduleCreateDto dto)
         {
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var result = await _scheduleService.CreateScheduleAsync(dto);
 
             if (!result.Success)
-            {
-                return StatusCode(result.Error!.StatusCode, new { mensaje = result.Error.Message });
-            }
+                return StatusCode(result.Error!.StatusCode, result.Error);
 
 
-            return StatusCode(201, result.Data);
+            return StatusCode(StatusCodes.Status201Created, result.Data);
         }
     }
 
