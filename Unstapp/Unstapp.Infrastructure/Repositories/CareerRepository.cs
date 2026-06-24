@@ -22,8 +22,16 @@ namespace Unstapp.Infrastructure.Repositories
         {
             return await _context.Careers.AnyAsync(c => c.CareerId == careerId);
         }
-
-        public async Task<UserCareer> GetUserCareerAsync(int userId)
+        public async Task<List<Career>> GetAllCareersAsync()
+        {
+            return await _context.Careers
+                .AsNoTracking()
+                .Include(c => c.Faculty)
+                .Include(c => c.UserCareers)
+                    .ThenInclude(uc => uc.User)
+                .ToListAsync();
+        }
+        public async Task<UserCareer?> GetUserCareerAsync(int userId)
         {
             return await _context.UserCareers
                 .AsNoTracking()
