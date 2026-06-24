@@ -31,7 +31,7 @@ namespace Unstapp.API.Controllers
             if (careerId.HasValue && careerId.Value > 0)
             {
 
-                if (!User.IsInRole("Admin"))
+                if (!User.IsInRole("Administracion"))
                 {
 
                     return StatusCode(403, new { mensaje = "Acceso denegado: Se requieren permisos de Administrador." });
@@ -66,7 +66,7 @@ namespace Unstapp.API.Controllers
 
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Administracion")]
         public async Task<IActionResult> CreateHorario([FromBody] ScheduleCreateDto dto)
         {
 

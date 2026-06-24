@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
@@ -29,7 +30,11 @@ namespace Unstapp.Application.Services
 
             if (userCareer == null)
             {
-                return ServiceResult<List<ScheduleResponseDto>>.Fail(404, "CAREER_NOT_FOUND", "El usuario no tiene una carrera asignada.");
+                return ServiceResult<List<ScheduleResponseDto>>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "CAREER_NOT_FOUND",
+                    "El usuario no tiene una carrera asignada."
+                );
             }
 
 

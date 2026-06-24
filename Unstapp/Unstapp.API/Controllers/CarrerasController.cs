@@ -7,7 +7,7 @@ namespace Unstapp.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")] 
+    [Authorize(Roles = "Administracion")] 
     public class CarrerasController : ControllerBase
     {
         private readonly ICareerAdminService _careerService;
