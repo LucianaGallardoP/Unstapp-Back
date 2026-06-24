@@ -1,51 +1,57 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
-using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Entities;
+using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.Application.Services
 {
     public class ScheduleService : IScheduleService
     {
-        private readonly AppDbContext _context;
+        private readonly ICareerRepository _careerRepository;
+        private readonly IScheduleRepository _scheduleRepository;
 
-        public ScheduleService(AppDbContext context)
+        public ScheduleService(
+            ICareerRepository careerRepository,
+            IScheduleRepository scheduleRepository
+        )
         {
-            _context = context;
+            _careerRepository = careerRepository;
+            _scheduleRepository = scheduleRepository;
         }
 
 
         public async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesByDayAsync(int userId, string day)
         {
 
-            var userCareer = await _context.UserCareers
-                .FirstOrDefaultAsync(uc => uc.UserId == userId);
-
+            var userCareer = await _careerRepository.GetUserCareerAsync(userId);
             if (userCareer == null)
             {
                 return ServiceResult<List<ScheduleResponseDto>>.Fail(
                     StatusCodes.Status404NotFound,
-                    "CAREER_NOT_FOUND",
+                    "CAREER_NOT_ASSIGNED",
                     "El usuario no tiene una carrera asignada."
                 );
             }
 
-
-            return await GetSchedulesCoreAsync(userCareer.CareerId, day);
+            if (userCareer.Career == null)
+            {
+                return ServiceResult<List<ScheduleResponseDto>>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "CAREER_NOT_FOUND",
+                    "La carrera asignada al usuario no fue encontrada."
+                );
+            }
+            var careerId = userCareer.CareerId;
+            return await GetSchedulesCoreAsync(careerId, day);
         }
 
 
         public async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesByCareerAsync(int careerId, string day)
         {
 
-            var careerExists = await _context.Careers.AnyAsync(c => c.CareerId == careerId);
+            var careerExists = await _careerRepository.CareerExistsAsync(careerId);
             if (!careerExists)
             {
                 return ServiceResult<List<ScheduleResponseDto>>.Fail(404, "CAREER_NOT_FOUND", "La carrera especificada no existe.");
@@ -58,10 +64,7 @@ namespace Unstapp.Application.Services
 
         private async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesCoreAsync(int careerId, string day)
         {
-            var schedules = await _context.Schedules
-                .Where(s => s.CareerId == careerId && s.Day.ToLower() == day.ToLower())
-                .OrderBy(s => s.StartTime)
-                .ToListAsync();
+            var schedules = await _scheduleRepository.GetSchedulesByCareerAndDayAsync(careerId, day);
 
             var resultDto = schedules.Select(s => new ScheduleResponseDto
             {
@@ -80,10 +83,14 @@ namespace Unstapp.Application.Services
         public async Task<ServiceResult<ScheduleResponseDto>> CreateScheduleAsync(ScheduleCreateDto dto)
         {
 
-            var careerExists = await _context.Careers.AnyAsync(c => c.CareerId == dto.CareerId);
+            var careerExists = await _careerRepository.CareerExistsAsync(dto.CareerId);
             if (!careerExists)
             {
-                return ServiceResult<ScheduleResponseDto>.Fail(404, "CAREER_NOT_FOUND", "La carrera especificada no existe.");
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "CAREER_NOT_FOUND",
+                    "La carrera especificada no existe."
+                );
             }
 
 
@@ -93,9 +100,12 @@ namespace Unstapp.Application.Services
 
             if (!TimeSpan.TryParse(cleanTime, out TimeSpan parsedTime))
             {
-                return ServiceResult<ScheduleResponseDto>.Fail(400, "INVALID_TIME_FORMAT", "El formato de la hora de inicio es inválido.");
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_TIME_FORMAT",
+                    "El formato de la hora de inicio es inválido."
+                );
             }
-
 
             var newSchedule = new Schedule
             {
@@ -109,18 +119,26 @@ namespace Unstapp.Application.Services
             };
 
 
-            _context.Schedules.Add(newSchedule);
-            await _context.SaveChangesAsync();
+            await _scheduleRepository.AddNewScheduleAsync(newSchedule);
+            var schedule = await _scheduleRepository.GetScheduleByIdAsync(newSchedule.Id);
 
+            if(schedule == null)
+            {
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "SCHEDULE_NOT_FOUND",
+                    "El horario no se registró en nuestra base de datos."
+                );
+            }
 
             var responseDto = new ScheduleResponseDto
             {
-                Id = newSchedule.Id,
-                Subject = newSchedule.Subject,
-                StartTime = cleanTime,
-                DurationHours = newSchedule.DurationHours,
-                Professor = newSchedule.Professor,
-                Classroom = newSchedule.Classroom
+                Id = schedule.Id,
+                Subject = schedule.Subject,
+                StartTime = schedule.StartTime.ToString(),
+                DurationHours = schedule.DurationHours,
+                Professor = schedule.Professor,
+                Classroom = schedule.Classroom
             };
 
             return ServiceResult<ScheduleResponseDto>.Ok(responseDto);
