@@ -26,6 +26,9 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<UserFollow> UserFollow => Set<UserFollow>();
         public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
 
+        // NUEVO
+        public DbSet<Unstapp.Infrastructure.Entities.Schedule> Schedules => Set<Unstapp.Infrastructure.Entities.Schedule>();
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -235,6 +238,25 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(e => e.IsDeleted).HasDefaultValue(false);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
+
+            // NUEVO
+            modelBuilder.Entity<Unstapp.Infrastructure.Entities.Schedule>(entity =>
+             {
+                 entity.HasKey(s => s.Id);
+                 entity.Property(s => s.Day).IsRequired().HasMaxLength(15);
+                 entity.Property(s => s.Subject).IsRequired().HasMaxLength(100);
+                 entity.Property(s => s.StartTime).IsRequired();
+                 entity.Property(s => s.DurationHours).HasColumnType("numeric(3,1)").IsRequired();
+                 entity.Property(s => s.Professor).IsRequired().HasMaxLength(100);
+                 entity.Property(s => s.Classroom).IsRequired().HasMaxLength(50);
+
+                 entity.HasOne(s => s.Career)
+                     .WithMany()
+                     .HasForeignKey(s => s.CareerId)
+                     .OnDelete(DeleteBehavior.Cascade);
+             });
         }
+
+
     }
 }
