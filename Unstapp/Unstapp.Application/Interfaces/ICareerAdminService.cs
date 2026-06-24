@@ -7,6 +7,6 @@ namespace Unstapp.Application.Interfaces
 {
     public interface ICareerAdminService
     {
-        Task<ServiceResult<List<CareerAdminResponseDto>> GetAllCareersAsync();
+        Task<ServiceResult<List<CareerAdminResponseDto>>> GetAllCareersAsync();
     }
 }

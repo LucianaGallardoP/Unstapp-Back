@@ -253,7 +253,7 @@ namespace Unstapp.Infrastructure.Data
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
-            modelBuilder.Entity<Unstapp.Infrastructure.Entities.Schedule>(entity =>
+            modelBuilder.Entity<Schedule>(entity =>
              {
                  entity.HasKey(s => s.Id);
                  entity.Property(s => s.Day).IsRequired().HasMaxLength(15);
