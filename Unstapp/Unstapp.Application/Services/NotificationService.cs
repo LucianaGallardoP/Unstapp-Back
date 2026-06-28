@@ -1,9 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
@@ -70,6 +65,7 @@ namespace Unstapp.Application.Services
                 NotificationId = n.NotificationId,
                 User = n.ActorUserName,
                 Action = GetActionText(n.ActionType),
+                ActorAvatarUrl = n.ActorUser?.AvatarUrl,
                 PostId = n.PostId,
                 IsPriority = n.IsPriority,
                 IsRead = n.IsRead,
@@ -173,6 +169,7 @@ namespace Unstapp.Application.Services
                 NotificationId = notification.NotificationId,
                 User = notification.ActorUserName,
                 Action = GetActionText(notification.ActionType),
+                ActorAvatarUrl = notification.ActorUser.AvatarUrl,
                 IsPriority = notification.IsPriority,
                 IsRead = notification.IsRead,
                 CreatedAt = notification.CreatedAt,

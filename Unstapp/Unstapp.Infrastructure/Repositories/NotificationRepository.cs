@@ -28,6 +28,8 @@ namespace Unstapp.Infrastructure.Repositories
         public async Task<List<Notification>> GetAllByUserIdAsync(int userId)
         {
             return await _context.Notifications
+                .AsNoTracking()
+                .Include(n => n.ActorUser)
                 .Where(n => n.RecipientUserId == userId && !n.IsDeleted)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
