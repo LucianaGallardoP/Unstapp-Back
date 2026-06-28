@@ -48,7 +48,7 @@ namespace Unstapp.Application.Services
             var endUtc = ConvertArgentinaLocalToUtc(endExclusiveArgentina);
 
             var events = await _calendarEventRepository.GetEventsByRangeAsync(startUtc, endUtc);
-            var eventsDto = _mapper.Map<List<CalendarEventDto>>(events);
+            var eventsDto = events.Select(MapToCalendarEventDto).ToList();
 
             var response = new CalendarEventsResponseDto
             {
@@ -148,7 +148,7 @@ namespace Unstapp.Application.Services
 
             var result = await GetEventsByRangeAsync(dayArgentina, dayArgentina);
 
-            if(!result.Success)
+            if (!result.Success)
                 return ServiceResult<List<CalendarEventDto>>.Fail(
                     result.Error!.StatusCode,
                     result.Error.Code,
@@ -160,10 +160,10 @@ namespace Unstapp.Application.Services
 
         private static bool CanCreateCalendarEvent(List<string> roles, CalendarEventType eventType)
         {
-            if(HasAdministrativeRoles(roles))
+            if (HasAdministrativeRoles(roles))
                 return true;
 
-            if(HasTeacherRoles(roles))
+            if (HasTeacherRoles(roles))
             {
                 return eventType == CalendarEventType.Clase ||
                     eventType == CalendarEventType.Examen;
@@ -223,6 +223,32 @@ namespace Unstapp.Application.Services
             var argentinaTimeZone = GetArgentinaTimeZone();
 
             return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, argentinaTimeZone);
+        }
+
+        private static CalendarEventDto MapToCalendarEventDto(CalendarEvent calendarEvent)
+        {
+            var argentinaTimeZone = GetArgentinaTimeZone();
+
+            var startArgentina = TimeZoneInfo.ConvertTimeFromUtc(
+                calendarEvent.StartDate,
+                argentinaTimeZone
+            );
+
+            var endArgentina = TimeZoneInfo.ConvertTimeFromUtc(
+                calendarEvent.EndDate,
+                argentinaTimeZone
+            );
+
+            return new CalendarEventDto
+            {
+                CalendarEventId = calendarEvent.CalendarEventId,
+                Title = calendarEvent.Title,
+                Description = calendarEvent.Description,
+                Type = calendarEvent.Type.ToString(),
+                Day = startArgentina.ToString("yyyy-MM-dd"),
+                StartTime = startArgentina.ToString("HH:mm"),
+                EndTime = endArgentina.ToString("HH:mm")
+            };
         }
     }
 }

@@ -52,15 +52,7 @@ namespace Unstapp.API.Controllers
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
 
-            return CreatedAtAction(
-                nameof(GetEvents),
-                new
-                {
-                    start = result.Data!.StartDate,
-                    end = result.Data.EndDate
-                },
-                result.Data
-            );
+            return StatusCode(StatusCodes.Status201Created, result.Data);
         }
 
         [HttpGet("daily")]

@@ -12,8 +12,9 @@ namespace Unstapp.Application.DTOs
         public int CalendarEventId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public CalendarEventType Type { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public string Type { get; set; }
+        public string Day {  get; set; } = string.Empty;
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
     }
 }
