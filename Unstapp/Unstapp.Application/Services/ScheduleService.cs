@@ -1,5 +1,7 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
@@ -11,14 +13,17 @@ namespace Unstapp.Application.Services
     {
         private readonly ICareerRepository _careerRepository;
         private readonly IScheduleRepository _scheduleRepository;
+        private readonly IMapper _mapper;
 
         public ScheduleService(
             ICareerRepository careerRepository,
-            IScheduleRepository scheduleRepository
+            IScheduleRepository scheduleRepository,
+            IMapper mapper
         )
         {
             _careerRepository = careerRepository;
             _scheduleRepository = scheduleRepository;
+            _mapper = mapper;
         }
 
 
@@ -107,17 +112,8 @@ namespace Unstapp.Application.Services
                 );
             }
 
-            var newSchedule = new Schedule
-            {
-                CareerId = dto.CareerId,
-                Subject = dto.Subject,
-                Day = dto.Day,
-                StartTime = parsedTime,
-                DurationHours = (decimal)dto.DurationHours,
-                Professor = dto.Professor,
-                Classroom = dto.Classroom
-            };
-
+            var newSchedule = _mapper.Map<Schedule>(dto);
+            newSchedule.StartTime = parsedTime;
 
             await _scheduleRepository.AddNewScheduleAsync(newSchedule);
             var schedule = await _scheduleRepository.GetScheduleByIdAsync(newSchedule.Id);
@@ -131,17 +127,121 @@ namespace Unstapp.Application.Services
                 );
             }
 
-            var responseDto = new ScheduleResponseDto
-            {
-                Id = schedule.Id,
-                Subject = schedule.Subject,
-                StartTime = schedule.StartTime.ToString(),
-                DurationHours = schedule.DurationHours,
-                Professor = schedule.Professor,
-                Classroom = schedule.Classroom
-            };
+            var response = _mapper.Map<ScheduleResponseDto>(schedule);
 
-            return ServiceResult<ScheduleResponseDto>.Ok(responseDto);
+            return ServiceResult<ScheduleResponseDto>.Ok(response);
+        }
+
+        public async Task<ServiceResult<ScheduleResponseDto>> UpdateScheduleAsync(
+            int id,
+            ScheduleUpdateDto dto)
+        {
+            if(id <= 0)
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_SCHEDULE_ID",
+                    "El ID del horario no es válido."
+                );
+
+            var schedule = await _scheduleRepository.GetScheduleByIdAsync(id);
+
+            if (schedule == null)
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "SCHEDULE_NOT_FOUND",
+                    "Horario no encontrado."
+                );
+
+            if(dto.CareerId.HasValue)
+            {
+                if (dto.CareerId.Value <= 0)
+                    return ServiceResult<ScheduleResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "INVALID_CAREER_ID",
+                        "La carrera no es válida."
+                    );
+
+                var careerExists = await _careerRepository.CareerExistsAsync(dto.CareerId.Value);
+
+                if(!careerExists)
+                    return ServiceResult<ScheduleResponseDto>.Fail(
+                        StatusCodes.Status404NotFound,
+                        "CAREER_NOT_FOUND",
+                        "La carrera especificada no existe."
+                    );
+            }
+
+            if (dto.Subject != null && string.IsNullOrWhiteSpace(dto.Subject))
+            {
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "SUBJECT_REQUIRED",
+                    "La materia no puede estar vacía."
+                );
+            }
+
+            if (dto.Day != null && string.IsNullOrWhiteSpace(dto.Day))
+            {
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "DAY_REQUIRED",
+                    "El día no puede estar vacío."
+                );
+            }
+
+            if (dto.DurationHours.HasValue && dto.DurationHours.Value <= 0)
+            {
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_DURATION",
+                    "La duración debe ser mayor a cero."
+                );
+            }
+
+            if (dto.StartTime != null)
+            {
+                if (string.IsNullOrWhiteSpace(dto.StartTime))
+                {
+                    return ServiceResult<ScheduleResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "INVALID_TIME_FORMAT",
+                        "La hora de inicio no puede estar vacía."
+                    );
+                }
+
+                string cleanTime = dto.StartTime
+                    .Replace(" pm", "", StringComparison.OrdinalIgnoreCase)
+                    .Replace(" am", "", StringComparison.OrdinalIgnoreCase)
+                    .Trim();
+
+                if (!TimeSpan.TryParse(cleanTime, out TimeSpan parsedTime))
+                {
+                    return ServiceResult<ScheduleResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "INVALID_TIME_FORMAT",
+                        "El formato de la hora de inicio es inválido."
+                    );
+                }
+
+                schedule.StartTime = parsedTime;
+            }
+
+            _mapper.Map(dto, schedule);
+
+            await _scheduleRepository.UpdateScheduleAsync(schedule);
+
+            var updatedSchedule = await _scheduleRepository.GetScheduleByIdAsync(schedule.Id);
+
+            if(updatedSchedule == null)
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "SCHEDULE_NOT_FOUND",
+                    "El horario no se pudo actualizar correctamente en nuestra base de datos."
+                );
+
+            var response = _mapper.Map<ScheduleResponseDto>(updatedSchedule);
+
+            return ServiceResult<ScheduleResponseDto>.Ok(response);
         }
     }
 }

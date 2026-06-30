@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Application.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 
@@ -76,10 +77,19 @@ namespace Unstapp.API.Controllers
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
 
-
             return StatusCode(StatusCodes.Status201Created, result.Data);
         }
+
+        [HttpPatch("id:int")]
+        [Authorize(Roles = "Administracion")]
+        public async Task<IActionResult> UpdateHorario(int id, [FromBody] ScheduleUpdateDto dto)
+        {
+            var result = await _scheduleService.UpdateScheduleAsync(id, dto);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(result.Data);
+        }
     }
-
-
 }

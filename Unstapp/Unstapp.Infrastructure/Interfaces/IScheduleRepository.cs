@@ -9,8 +9,9 @@ namespace Unstapp.Infrastructure.Interfaces
 {
     public interface IScheduleRepository
     {
-        Task<List<Schedule?>> GetSchedulesByCareerAndDayAsync(int careerId, string day);
+        Task<List<Schedule>> GetSchedulesByCareerAndDayAsync(int careerId, string day);
         Task AddNewScheduleAsync(Schedule schedule);
-        Task<Schedule> GetScheduleByIdAsync(int scheduleId);
+        Task<Schedule?> GetScheduleByIdAsync(int scheduleId);
+        Task UpdateScheduleAsync(Schedule schedule);
     }
 }

@@ -19,7 +19,7 @@ namespace Unstapp.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<List<Schedule?>> GetSchedulesByCareerAndDayAsync(int careerId, string day)
+        public async Task<List<Schedule>> GetSchedulesByCareerAndDayAsync(int careerId, string day)
         {
             return await _context.Schedules
                 .Where(s => s.CareerId == careerId && s.Day.ToLower() == day.ToLower())
@@ -33,10 +33,15 @@ namespace Unstapp.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Schedule> GetScheduleByIdAsync(int scheduleId)
+        public async Task<Schedule?> GetScheduleByIdAsync(int scheduleId)
         {
             return await _context.Schedules
                 .FirstOrDefaultAsync(s => s.Id == scheduleId);
+        }
+        public async Task UpdateScheduleAsync(Schedule schedule)
+        {
+            _context.Schedules.Update(schedule);
+            await _context.SaveChangesAsync();
         }
     }
 }
