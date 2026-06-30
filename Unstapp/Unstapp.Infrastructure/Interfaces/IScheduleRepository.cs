@@ -13,5 +13,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task AddNewScheduleAsync(Schedule schedule);
         Task<Schedule?> GetScheduleByIdAsync(int scheduleId);
         Task UpdateScheduleAsync(Schedule schedule);
+        Task SoftDeleteAsync(Schedule schedule);
     }
 }

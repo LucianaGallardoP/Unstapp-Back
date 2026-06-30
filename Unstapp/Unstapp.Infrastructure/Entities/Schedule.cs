@@ -12,8 +12,7 @@ namespace Unstapp.Infrastructure.Entities
         public decimal DurationHours { get; set; }
         public string Professor { get; set; } = string.Empty;
         public string Classroom { get; set; } = string.Empty;
-
-        // Propiedad de navegación virtual para EF Core
-        public virtual Career? Career { get; set; }
+        public bool IsDeleted { get; set; } = false;
+        public Career Career { get; set; } = null!;
     }
 }

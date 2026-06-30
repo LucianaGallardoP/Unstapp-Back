@@ -243,5 +243,28 @@ namespace Unstapp.Application.Services
 
             return ServiceResult<ScheduleResponseDto>.Ok(response);
         }
+
+        public async Task<ServiceResult<bool>> DeleteScheduleAsync(int id)
+        {
+            if (id <= 0)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_SCHEDULE_ID",
+                    "El ID del horario no es válido."
+                );
+
+            var schedule = await _scheduleRepository.GetScheduleByIdAsync(id);
+
+            if (schedule == null)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "SCHEDULE_NOT_FOUND",
+                    "Horario no encontrado."
+                );
+
+            await _scheduleRepository.SoftDeleteAsync(schedule);
+
+            return ServiceResult<bool>.Ok(true);
+        }
     }
 }

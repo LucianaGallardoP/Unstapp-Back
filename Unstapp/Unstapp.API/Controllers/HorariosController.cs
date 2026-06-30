@@ -80,7 +80,7 @@ namespace Unstapp.API.Controllers
             return StatusCode(StatusCodes.Status201Created, result.Data);
         }
 
-        [HttpPatch("id:int")]
+        [HttpPatch("{id:int}")]
         [Authorize(Roles = "Administracion")]
         public async Task<IActionResult> UpdateHorario(int id, [FromBody] ScheduleUpdateDto dto)
         {
@@ -90,6 +90,18 @@ namespace Unstapp.API.Controllers
                 return StatusCode(result.Error!.StatusCode, result.Error);
 
             return Ok(result.Data);
+        }
+
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Administracion")]
+        public async Task<IActionResult> DeleteHorario(int id)
+        {
+            var result = await _scheduleService.DeleteScheduleAsync(id);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return NoContent();
         }
     }
 }
