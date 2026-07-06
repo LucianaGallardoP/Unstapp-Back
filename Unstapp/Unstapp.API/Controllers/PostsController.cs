@@ -76,7 +76,7 @@ namespace Unstapp.API.Controllers
                 if (!result.Success)
                     return StatusCode(result.Error!.StatusCode, result.Error);
 
-                return Ok(result.Data);
+                return StatusCode(StatusCodes.Status201Created, result.Data);
             }
             catch (Exception ex)
             {
