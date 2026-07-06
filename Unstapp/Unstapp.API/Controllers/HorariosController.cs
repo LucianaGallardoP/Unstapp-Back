@@ -103,5 +103,18 @@ namespace Unstapp.API.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("import")]
+        [Authorize(Roles = "Administracion")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ImportHorarios([FromForm] ScheduleImportRequestDto requestDto)
+        {
+            var result = await _scheduleService.ImportSchedulesAsync(requestDto.File);
+
+            if(!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(result.Data);
+        }
     }
 }

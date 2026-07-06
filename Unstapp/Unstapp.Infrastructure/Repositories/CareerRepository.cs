@@ -39,5 +39,13 @@ namespace Unstapp.Infrastructure.Repositories
                     .ThenInclude(c => c.Faculty)
                 .FirstOrDefaultAsync(uc => uc.UserId == userId);
         }
+
+        public async Task<List<int>> GetExistingCareerIdsAsync(List<int> careerIds)
+        {
+            return await _context.Careers
+                .Where(c => careerIds.Contains(c.CareerId))
+                .Select(c => c.CareerId)
+                .ToListAsync();
+        }
     }
 }

@@ -157,6 +157,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

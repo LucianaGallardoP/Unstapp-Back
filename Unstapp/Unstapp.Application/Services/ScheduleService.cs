@@ -1,5 +1,10 @@
+using System.Globalization;
+using System.Text;
 using AutoMapper;
+using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Storage;
+using Org.BouncyCastle.Security;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Application.Interfaces;
@@ -118,7 +123,7 @@ namespace Unstapp.Application.Services
             await _scheduleRepository.AddNewScheduleAsync(newSchedule);
             var schedule = await _scheduleRepository.GetScheduleByIdAsync(newSchedule.Id);
 
-            if(schedule == null)
+            if (schedule == null)
             {
                 return ServiceResult<ScheduleResponseDto>.Fail(
                     StatusCodes.Status404NotFound,
@@ -136,7 +141,7 @@ namespace Unstapp.Application.Services
             int id,
             ScheduleUpdateDto dto)
         {
-            if(id <= 0)
+            if (id <= 0)
                 return ServiceResult<ScheduleResponseDto>.Fail(
                     StatusCodes.Status400BadRequest,
                     "INVALID_SCHEDULE_ID",
@@ -152,7 +157,7 @@ namespace Unstapp.Application.Services
                     "Horario no encontrado."
                 );
 
-            if(dto.CareerId.HasValue)
+            if (dto.CareerId.HasValue)
             {
                 if (dto.CareerId.Value <= 0)
                     return ServiceResult<ScheduleResponseDto>.Fail(
@@ -163,7 +168,7 @@ namespace Unstapp.Application.Services
 
                 var careerExists = await _careerRepository.CareerExistsAsync(dto.CareerId.Value);
 
-                if(!careerExists)
+                if (!careerExists)
                     return ServiceResult<ScheduleResponseDto>.Fail(
                         StatusCodes.Status404NotFound,
                         "CAREER_NOT_FOUND",
@@ -232,7 +237,7 @@ namespace Unstapp.Application.Services
 
             var updatedSchedule = await _scheduleRepository.GetScheduleByIdAsync(schedule.Id);
 
-            if(updatedSchedule == null)
+            if (updatedSchedule == null)
                 return ServiceResult<ScheduleResponseDto>.Fail(
                     StatusCodes.Status404NotFound,
                     "SCHEDULE_NOT_FOUND",
@@ -265,6 +270,321 @@ namespace Unstapp.Application.Services
             await _scheduleRepository.SoftDeleteAsync(schedule);
 
             return ServiceResult<bool>.Ok(true);
+        }
+
+        // Se asume que el excel viene en este formato: Carrera | Materia | Día | HoraInicio | Duracion | Profesor | Aula
+        public async Task<ServiceResult<ScheduleImportResponseDto>> ImportSchedulesAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return ServiceResult<ScheduleImportResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "FILE_REQUIRED",
+                    "El archivo está vacío o no se proporcionó."
+                );
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (extension != ".xlsx" && extension != ".xls")
+                return ServiceResult<ScheduleImportResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_FILE_FORMAT",
+                    "El archivo debe ser un Excel (.xlsx o .xls)."
+                );
+
+            var careers = await _careerRepository.GetAllCareersAsync();
+
+            var careersByName = careers
+                .GroupBy(c => NormalizeText(c.Name))
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var schedules = new List<Schedule>();
+
+            await using var stream = file.OpenReadStream();
+
+            using var reader = ExcelReaderFactory.CreateReader(stream);
+
+            var rowNumber = 0;
+
+            while (reader.Read())
+            {
+                rowNumber++;
+
+                // Saltar encabezado
+                if (rowNumber == 1)
+                    continue;
+
+                var careerName = reader.GetValue(0)?.ToString()?.Trim();
+                var subject = reader.GetValue(1)?.ToString()?.Trim();
+                var day = reader.GetValue(2)?.ToString()?.Trim();
+                var startTimeValue = reader.GetValue(3)?.ToString()?.Trim();
+                var durationValue = reader.GetValue(4)?.ToString()?.Trim();
+                var professor = reader.GetValue(5)?.ToString()?.Trim();
+                var classroom = reader.GetValue(6)?.ToString()?.Trim();
+
+                var isEmptyRow = string.IsNullOrWhiteSpace(careerName) &&
+                                 string.IsNullOrWhiteSpace(subject) &&
+                                 string.IsNullOrWhiteSpace(day) &&
+                                 startTimeValue == null &&
+                                 durationValue == null &&
+                                 string.IsNullOrWhiteSpace(professor) &&
+                                 string.IsNullOrWhiteSpace(classroom);
+
+                if (isEmptyRow)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(careerName))
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "CAREER_REQUIRED",
+                        $"Fila {rowNumber}: La Carrera es obligatoria."
+                    );
+
+                var normalizedCareerName = NormalizeText(careerName);
+
+                if(!careersByName.TryGetValue(normalizedCareerName, out var matchingCareers))
+                {
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "CAREER_NOT_FOUND",
+                        $"Fila {rowNumber}: La carrera '{careerName}' no existe en la base de datos."
+                    );
+                }
+
+                if(matchingCareers.Count > 1)
+                {
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "AMBIGUOUS_CAREER_NAME",
+                        $"Fila {rowNumber}: La carrera '{careerName}' coincide con más de una carrera. Por favor, asegúrese de que el nombre de la carrera sea único."
+                    );
+                }
+
+                var career = matchingCareers.First();
+
+                if (string.IsNullOrWhiteSpace(subject))
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "SUBJECT_REQUIRED",
+                        $"Fila {rowNumber}: La materia es requerida."
+                    );
+
+                if (string.IsNullOrWhiteSpace(day))
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "DAY_REQUIRED",
+                        $"Fila {rowNumber}: El día es requerido."
+                    );
+
+                if (!TryParseExcelTime(startTimeValue, out var startTime))
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "INVALID_START_TIME_FORMAT",
+                        $"Fila {rowNumber}: El formato de la hora de inicio es inválido."
+                    );
+
+                if (!TryParseExcelDecimal(durationValue, out var durationHours) || durationHours <= 0)
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "INVALID_DURATION",
+                        $"Fila {rowNumber}: La duración debe ser un número mayor a cero."
+                    );
+
+                schedules.Add(new Schedule
+                {
+                    CareerId = career.CareerId,
+                    Subject = subject.Trim(),
+                    Day = day.Trim(),
+                    StartTime = startTime,
+                    DurationHours = durationHours,
+                    Professor = string.IsNullOrWhiteSpace(professor) ? string.Empty : professor.Trim(),
+                    Classroom = string.IsNullOrWhiteSpace(classroom) ? string.Empty : classroom.Trim(),
+                    IsDeleted = false
+                });
+            }
+
+            if (schedules.Count == 0)
+                return ServiceResult<ScheduleImportResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "NO_VALID_ROWS",
+                    "No se encontraron filas válidas para importar."
+                );
+
+            await _scheduleRepository.AddRangeAsync(schedules);
+
+            return ServiceResult<ScheduleImportResponseDto>.Ok(new ScheduleImportResponseDto
+            {
+                CreatedCount = schedules.Count,
+                Message = $"{schedules.Count} horarios importados exitosamente."
+            });
+        }
+        private static string NormalizeText(string value)
+        {
+            var normalized = value.Trim().Normalize(NormalizationForm.FormD);
+
+            var chars = normalized
+                .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                .ToArray();
+
+            return new string(chars)
+                .Normalize(NormalizationForm.FormC)
+                .ToLowerInvariant();
+        }
+
+        private static bool TryParseExcelTime(object? value, out TimeSpan time)
+        {
+            time = default;
+
+            if (value == null)
+                return false;
+
+            if (value is TimeSpan timeSpan)
+            {
+                time = timeSpan;
+                return IsValidHour(time);
+            }
+
+            if(value is DateTime dateTime)
+            {
+                time = dateTime.TimeOfDay;
+                return IsValidHour(time);
+            }
+
+            if (value is double doubleValue)
+            {
+                if(doubleValue > 0 && doubleValue < 1)
+                {
+                    time = TimeSpan.FromDays(doubleValue);
+                    return IsValidHour(time);
+                }
+
+                if(doubleValue >= 0 && doubleValue < 24)
+                {
+                    time = TimeSpan.FromHours(doubleValue);
+                    return IsValidHour(time);
+                }
+
+                return false;
+            }
+
+            var text = value.ToString()?.Trim();
+
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+            text = text
+                .Replace(" hs", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("hs", "", StringComparison.OrdinalIgnoreCase)
+                .Replace(" h", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("h", "", StringComparison.OrdinalIgnoreCase)
+                .Replace(" pm", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("pm", "", StringComparison.OrdinalIgnoreCase)
+                .Replace(" am", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("am", "", StringComparison.OrdinalIgnoreCase)
+                .Trim();
+
+            if(int.TryParse(text, out int hourOnly))
+            {
+                if(hourOnly >= 0 && hourOnly < 24)
+                {
+                    time = TimeSpan.FromHours(hourOnly);
+                    return true;
+                }
+
+                return false;
+            }
+
+            if(decimal.TryParse(text, NumberStyles.Number, new CultureInfo("es-AR"), out var decimalHour) ||
+               decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out decimalHour)
+            )
+            {
+                if(decimalHour >= 0 && decimalHour < 24)
+                {
+                    time = TimeSpan.FromHours((double)decimalHour);
+                    return true;
+                }
+
+                return false;
+            }
+
+            if (TimeSpan.TryParse(text, out time))
+                return IsValidHour(time);
+
+            if (DateTime.TryParse(
+                text,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out var parsedDate
+            ))
+            {
+                time = parsedDate.TimeOfDay;
+                return IsValidHour(time);
+            }
+
+            if (DateTime.TryParse(
+                text,
+                CultureInfo.CurrentCulture,
+                DateTimeStyles.None,
+                out parsedDate
+            ))
+            {
+                time = parsedDate.TimeOfDay;
+                return IsValidHour(time);
+            }
+
+            return false;
+        }
+
+        private static bool IsValidHour(TimeSpan time)
+        {
+            return time >= TimeSpan.Zero && time < TimeSpan.FromDays(1);
+        }
+
+        private static bool TryParseExcelDecimal(object? value, out decimal number)
+        {
+            number = default;
+
+            if (value == null)
+                return false;
+
+            if (value is decimal decimalValue)
+            {
+                number = decimalValue;
+                return true;
+            }
+
+            if (value is double doubleValue)
+            {
+                number = Convert.ToDecimal(doubleValue, CultureInfo.InvariantCulture);
+                return true;
+            }
+
+            if(value is int intValue)
+            {
+                number = intValue;
+                return true;
+            }
+
+            var text = value.ToString()?.Trim();
+
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+            if(decimal.TryParse(
+                text,
+                NumberStyles.Number,
+                new CultureInfo("es-AR"),
+                out number
+            ))
+                return true;
+
+            if (decimal.TryParse(text,
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out number
+            ))
+                return true;
+
+            return false;
         }
     }
 }

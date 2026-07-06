@@ -7,5 +7,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<bool> CareerExistsAsync(int careerId);
         Task<List<Career>> GetAllCareersAsync();
         Task<UserCareer?> GetUserCareerAsync(int userId);
+        Task<List<int>> GetExistingCareerIdsAsync(List<int> careerIds);
     }
 }

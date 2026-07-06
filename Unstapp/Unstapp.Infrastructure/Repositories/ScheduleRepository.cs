@@ -45,5 +45,23 @@ namespace Unstapp.Infrastructure.Repositories
             schedule.IsDeleted = true;
             await _context.SaveChangesAsync();
         }
+
+        public async Task AddRangeAsync(List<Schedule> schedules)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                await _context.Schedules.AddRangeAsync(schedules);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
 }
