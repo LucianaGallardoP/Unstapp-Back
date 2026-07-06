@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
-using System.Security.Claims;
-using Unstapp.Shared.DTOs.Common;
 using Unstapp.Infrastructure.Entities.Enums;
+using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Interfaces;
 
 namespace Unstapp.API.Controllers
 {
@@ -15,10 +15,14 @@ namespace Unstapp.API.Controllers
     public class PostsController : ControllerBase
     {
         private readonly IPostService _postService;
+        private readonly IModerationService _moderationService;
 
-        public PostsController(IPostService postService)
+        public PostsController(
+            IPostService postService,
+            IModerationService moderationService)
         {
             _postService = postService;
+            _moderationService = moderationService;
         }
         
         [HttpGet]
@@ -55,6 +59,16 @@ namespace Unstapp.API.Controllers
                         StatusCode = StatusCodes.Status401Unauthorized,
                         Code = "INVALID_TOKEN",
                         Message = "Token inválido."
+                    });
+
+                var moderationResult = await _moderationService.ModeratePostAsync(dto.Content);
+
+                if (!moderationResult.IsApproved)
+                    return BadRequest(new ApiErrorResponse
+                    {
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Code = moderationResult.Code,
+                        Message = moderationResult.Message ?? "Tu publicación contiene lenguaje que infringe las normas de la comunidad."
                     });
 
                 var result = await _postService.CreateAsync(userId, dto);

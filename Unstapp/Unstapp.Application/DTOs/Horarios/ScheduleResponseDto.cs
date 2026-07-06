@@ -1,6 +1,6 @@
 using System;
 
-namespace Unstapp.Application.DTOs
+namespace Unstapp.Application.DTOs.Horarios
 {
     public class ScheduleResponseDto
     {

@@ -108,6 +108,7 @@ var cloudinaryAccount = new Account(
 
 var cloudinary = new Cloudinary(cloudinaryAccount);
 
+builder.Services.AddHttpClient<IModerationService, GeminiModerationService>();
 builder.Services.AddSingleton(cloudinary);
 builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
 builder.Services.AddScoped<IMediaStorageService, CloudinaryMediaStorageService>();
