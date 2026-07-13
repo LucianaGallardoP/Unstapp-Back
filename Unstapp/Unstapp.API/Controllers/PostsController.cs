@@ -61,7 +61,7 @@ namespace Unstapp.API.Controllers
                         Message = "Token inválido."
                     });
 
-                var moderationResult = await _moderationService.ModeratePostAsync(dto.Content);
+                var moderationResult = await _moderationService.ModerateContentAsync(dto.Content);
 
                 if (!moderationResult.IsApproved)
                     return BadRequest(new ApiErrorResponse

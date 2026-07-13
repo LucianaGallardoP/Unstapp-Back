@@ -4,6 +4,6 @@ namespace Unstapp.Shared.Interfaces
 {
     public interface IModerationService
     {
-        Task<ModerationResultDto> ModeratePostAsync(string? Content);
+        Task<ModerationResultDto> ModerateContentAsync(string? Content);
     }
 }

@@ -24,7 +24,7 @@ namespace Unstapp.Infrastructure.Services
             _logger = logger;
         }
 
-        public async Task<ModerationResultDto> ModeratePostAsync(string? content)
+        public async Task<ModerationResultDto> ModerateContentAsync(string? content)
         {
             if(string.IsNullOrWhiteSpace(content))
                 return new ModerationResultDto
@@ -250,7 +250,7 @@ namespace Unstapp.Infrastructure.Services
                 {
                     IsApproved = false,
                     Code = "POST_CONTENT_VIOLATES_COMMUNITY_RULES",
-                    Message = "Tu publicación contiene lenguaje que infringe las normas de la comunidad.",
+                    Message = "Tu contenido contiene lenguaje que infringe las normas de la comunidad.",
                     Category = category
                 };
 
