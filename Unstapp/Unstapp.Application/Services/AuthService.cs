@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using AutoMapper;
+using Azure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -40,18 +41,28 @@ namespace Unstapp.Application.Services
             _emailService = emailService;
         }
 
-        public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto dto)
+        public async Task<ServiceResult<LoginResponseDto?>> LoginAsync(LoginRequestDto dto)
         {
 
             var dni = dto.DNI.Trim();
 
             var user = await _userRepository.GetByDniAsync(dni);
 
-            if(user == null) return null;
+            if(user == null)
+                return ServiceResult<LoginResponseDto?>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "USER_NOT_FOUND",
+                    "Usuario no encontrado."
+                );
 
             bool isValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.Password);
 
-            if(!isValid) return null;
+            if(!isValid)
+                return ServiceResult<LoginResponseDto?>.Fail(
+                    StatusCodes.Status401Unauthorized, 
+                    "INVALID_PASSWORD",
+                    "Contraseña inválida."
+                );
 
             var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
 
@@ -59,7 +70,7 @@ namespace Unstapp.Application.Services
 
             var expiresInMinutes = int.Parse(_config["Jwt:ExpiresInMinutes"] ?? "60");
 
-            return new LoginResponseDto
+            var response = new LoginResponseDto
             {
                 UserId = user.UserId,
                 FullName = $"{user.Name} {user.LastName}",
@@ -67,6 +78,8 @@ namespace Unstapp.Application.Services
                 Token = token,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(expiresInMinutes),
             };
+
+            return ServiceResult<LoginResponseDto?>.Ok(response);
         }
 
         public async Task RegisterAsync(RegisterRequestDto dto)

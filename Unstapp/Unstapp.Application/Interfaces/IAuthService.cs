@@ -10,7 +10,7 @@ namespace Unstapp.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<LoginResponseDto?> LoginAsync(LoginRequestDto dto);
+        Task<ServiceResult<LoginResponseDto?>> LoginAsync(LoginRequestDto dto);
         Task RegisterAsync(RegisterRequestDto dto);
         Task<ServiceResult<MessageResponseDto>> VerifyFirstTimeAsync(VerifyFirstTimeRequestDto dto);
         Task<ServiceResult<MessageResponseDto>> SetInitialPasswordAsync(SetInitialPasswordRequestDto dto);

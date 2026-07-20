@@ -1,14 +1,12 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
-using Unstapp.Infrastructure.Interfaces;
-using Unstapp.Shared.Interfaces;
-using Unstapp.Shared.DTOs.Common;
-using Microsoft.AspNetCore.Http;
-using Npgsql.PostgresTypes;
 using Unstapp.Infrastructure.Entities.Enums;
-using System.Net.WebSockets;
+using Unstapp.Infrastructure.Interfaces;
+using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Interfaces;
 
 namespace Unstapp.Application.Services
 {

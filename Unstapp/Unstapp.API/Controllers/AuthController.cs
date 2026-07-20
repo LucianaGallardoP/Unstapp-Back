@@ -20,12 +20,10 @@ namespace Unstapp.API.Controllers
         {
             var result = await _authService.LoginAsync(dto);
 
-            if (result == null)
-            {
-                return Unauthorized(new { message = "Usuario o Contraseña Incorrectos." });
-            }
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
 
-            return Ok(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("register")]
@@ -41,9 +39,7 @@ namespace Unstapp.API.Controllers
             var result = await _authService.VerifyFirstTimeAsync(dto);
 
             if (!result.Success)
-            {
                 return StatusCode(result.Error!.StatusCode, result.Error);
-            }
 
             return Ok(result.Data);
         }
@@ -54,9 +50,7 @@ namespace Unstapp.API.Controllers
             var result = await _authService.SetInitialPasswordAsync(dto);
 
             if (!result.Success)
-            {
                 return StatusCode(result.Error!.StatusCode, result.Error);
-            }
 
             return Ok(result.Data);
         }
