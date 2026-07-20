@@ -225,6 +225,7 @@ namespace Unstapp.Application.Services
             if (roles.Any(r =>
             r.Equals("Bar", StringComparison.OrdinalIgnoreCase) ||
             r.Equals("Fotocopiadora", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("Biblioteca", StringComparison.OrdinalIgnoreCase) ||
             r.Equals("Administración", StringComparison.OrdinalIgnoreCase) ||
             r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
             r.Equals("Administrativo", StringComparison.OrdinalIgnoreCase)))
