@@ -46,5 +46,30 @@ namespace Unstapp.Application.Services
 
             return ServiceResult<UserContextDto>.Ok(response);
         }
+
+        public async Task<ServiceResult<bool>> UpdateWhatsAppNotificationAsync(int userId, bool enable)
+        {
+            if(userId <= 0)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_USER_ID",
+                    "El ID del usuario no es válido."
+                );
+
+            var user = await _userRepository.GetByIdAsync(userId);
+
+            if (user == null)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "USER_NOT_FOUND",
+                    "Usuario no encontrado."
+                );
+
+            user.WhatsAppNotificationsEnabled = enable;
+
+            await _userRepository.UpdateAsync(user);
+
+            return ServiceResult<bool>.Ok(user.WhatsAppNotificationsEnabled);
+        }
     }
 }

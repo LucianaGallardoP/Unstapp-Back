@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ActionConstraints;
-using System.Security.Claims;
 using Unstapp.Application.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 
@@ -46,14 +45,12 @@ namespace Unstapp.API.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(userIdClaim, out var userId))
-            {
                 return Unauthorized(new ApiErrorResponse
                 {
                     StatusCode = StatusCodes.Status401Unauthorized,
                     Code = "INVALID_TOKEN",
                     Message = "Token inválido."
                 });
-            }
 
             var result = await _notificationService.HasUnreadNotificationsAsync(userId);
 
@@ -90,14 +87,12 @@ namespace Unstapp.API.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(userIdClaim, out var userId))
-            {
                 return Unauthorized(new ApiErrorResponse
                 {
                     StatusCode = StatusCodes.Status401Unauthorized,
                     Code = "INVALID_TOKEN",
                     Message = "Token inválido."
                 });
-            }
 
             var result = await _notificationService.DeleteAsync(userId, notificationId);
 

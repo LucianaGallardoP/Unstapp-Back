@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Unstapp.Application.DTOs.WhatsApp;
 using Unstapp.Application.Interfaces;
-using Unstapp.Application.Services;
 using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.API.Controllers
@@ -89,6 +89,30 @@ namespace Unstapp.API.Controllers
                 return StatusCode(result.Error!.StatusCode, result.Error);
 
             return Ok(result.Data);
+        }
+
+        [HttpPatch("me/whatsapp-notifications")]
+        public async Task<IActionResult> UpdateWhatsAppNotifications([FromBody] UpdateWhatsAppNotificationsDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if(!int.TryParse(userIdClaim, out var currentUserId))
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
+
+            var result = await _userService.UpdateWhatsAppNotificationsAsync(currentUserId, dto.Enabled);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(new
+            {
+                WhatsAppNotificationsEnabled = result.Data
+            });
         }
     }
 }

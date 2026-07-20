@@ -85,7 +85,7 @@ namespace Unstapp.Application.Services
                     StatusCodes.Status404NotFound,
                     "NOTIFICATION_NOT_FOUND",
                     "Notificación no encontrada."
-                    );
+                );
 
             notification.IsRead = true;
 
@@ -103,7 +103,7 @@ namespace Unstapp.Application.Services
                     StatusCodes.Status404NotFound,
                     "NOTIFICATION_NOT_FOUND",
                     "Notificación no encontrada."
-                    );
+                );
 
             notification.IsDeleted = true;
 
@@ -182,7 +182,8 @@ namespace Unstapp.Application.Services
         private async Task<Notification?> CreateNotification(
             int actorUserId,
             int postId,
-            NotificationActionType actionType, bool isPriority)
+            NotificationActionType actionType,
+            bool isPriority)
         {
             var post = await _postRepository.GetByIdWithRelationsAsync(postId);
 

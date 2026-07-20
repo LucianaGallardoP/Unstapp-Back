@@ -11,5 +11,6 @@ namespace Unstapp.Application.Interfaces
     public interface IUserService
     {
         Task<ServiceResult<UserContextDto>> GetUserContextAsync(int userId);
+        Task<ServiceResult<bool>> UpdateWhatsAppNotificationsAsync(int userId, bool enable);
     }
 }
