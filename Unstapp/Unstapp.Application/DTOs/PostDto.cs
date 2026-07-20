@@ -21,5 +21,6 @@ namespace Unstapp.Application.DTOs
         public int CommentsCount { get; set; }
         public bool isLikedByMe { get; set; } = false;
         public bool isImportant { get; set; }
+        public string AuthorRoleName { get; set; } = string.Empty;
     }
 }

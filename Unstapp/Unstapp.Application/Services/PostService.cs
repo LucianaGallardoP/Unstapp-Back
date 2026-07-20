@@ -136,6 +136,10 @@ namespace Unstapp.Application.Services
 
             var responseDto = _mapper.Map<PostDto>(createdPost);
 
+            responseDto.AuthorRoleName = ResolveDisplayRole(
+                createdPost.User.UserRoles.Select(ur => ur.Role.Name)
+            );
+
             return ServiceResult<PostDto>.Ok(responseDto);
         }
 
@@ -143,18 +147,22 @@ namespace Unstapp.Application.Services
         {
             var posts = await _postRepository.GetFilteredPostsAsync(userId, filter);
 
-            var postDtos = _mapper.Map<List<PostDto>>(posts);
-
-            foreach (var postDto in postDtos)
+            var response = posts.Select(post =>
             {
-                var post = posts.First(p => p.PostId == postDto.PostId);
+                var dto = _mapper.Map<PostDto>(post);
 
-                postDto.LikesCount = post.Likes.Count();
-                postDto.CommentsCount = post.Comments.Count();
-                postDto.isLikedByMe = post.Likes.Any(l => l.UserId == userId);
-            }
+                dto.AuthorRoleName = ResolveDisplayRole(
+                    post.User.UserRoles.Select(ur => ur.Role.Name)
+                );
 
-            return ServiceResult<List<PostDto>>.Ok(postDtos);
+                dto.LikesCount = post.Likes.Count();
+                dto.CommentsCount = post.Comments.Count();
+                dto.isLikedByMe = post.Likes.Any(l => l.UserId == userId);
+
+                return dto;
+            }).ToList();
+
+            return ServiceResult<List<PostDto>>.Ok(response);
         }
 
         public async Task<ServiceResult<PostDto>> GetByIdAsync(int userId, int postId)
@@ -260,6 +268,37 @@ namespace Unstapp.Application.Services
             }
 
             return ServiceResult<List<PostDto>>.Ok(postDtos);
+        }
+
+        private static string ResolveDisplayRole(IEnumerable<string> roles)
+        {
+            var roleList = roles
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .Select(r => r.Trim())
+                .ToList();
+
+            if (roleList.Any(r => r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
+                                  r.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
+                                  r.Equals("Admin", StringComparison.OrdinalIgnoreCase)))
+                return "Administracion";
+
+            if (roleList.Any(r => r.Equals("Docente", StringComparison.OrdinalIgnoreCase) ||
+                             r.Equals("Profesor", StringComparison.OrdinalIgnoreCase)))
+                return "Docente";
+
+            if (roleList.Any(r => r.Equals("Alumno", StringComparison.OrdinalIgnoreCase)))
+                return "Alumno";
+
+            if (roleList.Any(r => r.Equals("Bar", StringComparison.OrdinalIgnoreCase)))
+                return "Bar";
+
+            if (roleList.Any(r => r.Equals("Fotocopiadora", StringComparison.OrdinalIgnoreCase)))
+                return "Fotocopiadora";
+
+            if (roleList.Any(r => r.Equals("Biblioteca", StringComparison.OrdinalIgnoreCase)))
+                return "Biblioteca";
+
+            return "Usuario";
         }
     }
 }

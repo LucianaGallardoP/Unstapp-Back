@@ -61,11 +61,16 @@ namespace Unstapp.Infrastructure.Repositories
         public async Task<List<Post>> GetFilteredPostsAsync(int userId, PostFilter filter)
         {
             var query = _context.Posts
+                .AsNoTracking()
                 .Where(p => !p.IsDeleted)
                 .Include(p => p.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
                 .Include(p => p.PostCareers)
+                    .ThenInclude(pc => pc.Career)
+                .AsSplitQuery()
                 .AsQueryable();
 
             if(filter == PostFilter.MiCarrera)
