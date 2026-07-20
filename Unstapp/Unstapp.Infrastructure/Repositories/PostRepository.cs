@@ -1,9 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Entities.Enums;
@@ -125,6 +120,39 @@ namespace Unstapp.Infrastructure.Repositories
             post.IsDeleted = true;
             _context.Posts.Update(post);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AddPostWithCareersAsync(Post post, List<int> careerIds)
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                await _context.Posts.AddAsync(post);
+                await _context.SaveChangesAsync();
+
+                if (careerIds.Count > 0)
+                {
+                    var postCareers = careerIds
+                        .Distinct()
+                        .Select(careerId => new PostCareer
+                        {
+                            PostId = post.PostId,
+                            CareerId = careerId
+                        })
+                        .ToList();
+
+                    await _context.PostCareers.AddRangeAsync(postCareers);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

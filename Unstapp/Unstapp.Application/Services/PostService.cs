@@ -8,6 +8,7 @@ using Unstapp.Shared.DTOs.Common;
 using Microsoft.AspNetCore.Http;
 using Npgsql.PostgresTypes;
 using Unstapp.Infrastructure.Entities.Enums;
+using System.Net.WebSockets;
 
 namespace Unstapp.Application.Services
 {
@@ -17,16 +18,19 @@ namespace Unstapp.Application.Services
         private readonly IMapper _mapper;
         private readonly IMediaStorageService _mediaStorageService;
         private readonly IUserRepository _userRepository;
+        private readonly ICareerRepository _careerRepository;
         public PostService(
             IPostRepository postRepository,
             IMapper mapper,
             IMediaStorageService mediaStorageService,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            ICareerRepository careerRepository)
         {
             _postRepository = postRepository;
             _mapper = mapper;
             _mediaStorageService = mediaStorageService;
             _userRepository = userRepository;
+            _careerRepository = careerRepository;
         }
 
         public async Task<ServiceResult<PostDto>> CreateAsync(int userId, CreatePostDto dto)
@@ -44,6 +48,54 @@ namespace Unstapp.Application.Services
 
             var category = ResolvePostCategoryFromRoles(roles);
 
+            var isAdmin = roles.Any(r =>
+                r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Administrativo", StringComparison.OrdinalIgnoreCase)
+            );
+
+            var isGeneralPost = category == PostCategory.General;
+
+            var postCareerIds = new List<int>();
+
+            if (isGeneralPost)
+            {
+                var userCareerIds = await _userRepository.GetCareerIdsByUserIdAsync(userId);
+
+                postCareerIds = userCareerIds
+                    .Distinct()
+                    .ToList();
+            }
+            else
+            {
+                postCareerIds = dto.CareerIds?
+                    .Distinct()
+                    .ToList() ?? new List<int>();
+
+                if (postCareerIds.Any(id => id <= 0))
+                    return ServiceResult<PostDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "INVALID_CAREER_ID",
+                        "Los identificadores de carrera no son válidos."
+                    );
+
+                if (postCareerIds.Count > 0)
+                {
+                    var existingCareerIds = await _careerRepository.GetExistingCareerIdsAsync(postCareerIds);
+
+                    var missingCareerIds = postCareerIds
+                        .Except(existingCareerIds)
+                        .ToList();
+
+                    if (missingCareerIds.Count > 0)
+                        return ServiceResult<PostDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "CAREER_NOT_FOUND",
+                            $"Las siguientes carreras no existen: {string.Join(", ", missingCareerIds)}."
+                        );
+                }
+            }
             string? mediaUrl = null;
 
             if(dto.MediaFile != null)
@@ -55,7 +107,7 @@ namespace Unstapp.Application.Services
                         uploadResult.Error!.StatusCode,
                         uploadResult.Error.Code,
                         uploadResult.Error.Message
-                        );
+                    );
                 mediaUrl = uploadResult.Data;
             }
 
@@ -69,23 +121,18 @@ namespace Unstapp.Application.Services
             post.PostDate = DateTime.UtcNow;
             post.MediaUrl = mediaUrl;
             post.Category = category;
+            post.IsImportant = isAdmin && dto.IsImportant;
 
-            if(post.Category == PostCategory.General)
-            {
-                var userCareerIds = await _userRepository.GetCareerIdsByUserIdAsync(userId);
-
-                foreach(var careerId in userCareerIds)
-                {
-                    post.PostCareers.Add(new PostCareer
-                    {
-                        CareerId = careerId,
-                    });
-                }
-            }
-
-            await _postRepository.AddAsync(post);
+            await _postRepository.AddPostWithCareersAsync(post, postCareerIds);
 
             var createdPost = await _postRepository.GetByIdWithRelationsAsync(post.PostId);
+
+            if (createdPost == null)
+                return ServiceResult<PostDto>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "POST_NOT_FOUND",
+                    "No se pudo recuperar el post creado."
+                );
 
             var responseDto = _mapper.Map<PostDto>(createdPost);
 

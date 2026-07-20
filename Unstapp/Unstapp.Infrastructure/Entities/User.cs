@@ -14,7 +14,7 @@
         public string? Biography { get; set; }
         public string? AvatarUrl { get; set; }
         public string? CoverUrl { get; set; }
-
+        public bool WhatsAppNotificationsEnabled { get; set; } = false;
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();

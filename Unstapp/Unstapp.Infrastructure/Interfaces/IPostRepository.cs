@@ -20,5 +20,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task<List<Post>> SearchPostsAsync(string term);
         Task<Post?> GetByIdIncludingDeletedAsync(int postId);
         Task SoftDeleteAsync(Post post);
+        Task AddPostWithCareersAsync(Post post, List<int> careerIds);
     }
 }

@@ -31,7 +31,9 @@ namespace Unstapp.Application.Mappings
                 .ForMember(dest => dest.LikesCount,
                     opt => opt.MapFrom(src => src.Likes.Count))
                 .ForMember(dest => dest.CommentsCount,
-                    opt => opt.MapFrom(src => src.Comments.Count));
+                    opt => opt.MapFrom(src => src.Comments.Count))
+                .ForMember(dest => dest.isImportant,
+                    opt => opt.MapFrom(src => src.IsImportant));
         }
     }
 }

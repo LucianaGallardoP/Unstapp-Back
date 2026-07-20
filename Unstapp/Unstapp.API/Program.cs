@@ -109,7 +109,9 @@ var cloudinaryAccount = new Account(
 var cloudinary = new Cloudinary(cloudinaryAccount);
 
 builder.Services.AddHttpClient<IModerationService, GeminiModerationService>();
+builder.Services.AddHttpClient<IWhatsAppService, WhatsappService>();
 builder.Services.AddSingleton(cloudinary);
+builder.Services.AddSingleton<IWhatsAppNotificationDispatcher, WhatsAppNotificationDispatcher>();
 builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
 builder.Services.AddScoped<IMediaStorageService, CloudinaryMediaStorageService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -136,6 +138,8 @@ builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<ICareerRepository, CareerRepository>();
 builder.Services.AddScoped<ICareerAdminService, CareerAdminService>();
+builder.Services.AddScoped<IWhatsAppNotificationRepository, WhatsAppNotificationRepository>();
+builder.Services.AddScoped<IWhatsAppNotificationService, WhatsappNotificationService>();
 
 var port = Environment.GetEnvironmentVariable("PORT");
 if(!string.IsNullOrWhiteSpace(port))

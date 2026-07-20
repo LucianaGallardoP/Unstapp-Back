@@ -20,5 +20,6 @@ namespace Unstapp.Application.DTOs
         public int LikesCount { get; set; }
         public int CommentsCount { get; set; }
         public bool isLikedByMe { get; set; } = false;
+        public bool isImportant { get; set; }
     }
 }

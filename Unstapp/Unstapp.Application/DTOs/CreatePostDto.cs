@@ -6,11 +6,10 @@ namespace Unstapp.Application.DTOs
 {
     public class CreatePostDto
     {
-        public int? SubjectId { get; set; }
-
         [MaxLength(500, ErrorMessage = "El contenido del post no puede superar los 500 caracteres")]
-        public string? Content { get; set; } = null!;
-
+        public string? Content { get; set; }
+        public bool IsImportant { get; set; } = false;
         public IFormFile? MediaFile { get; set; }
+        public List<int>? CareerIds { get; set; }
     }
 }

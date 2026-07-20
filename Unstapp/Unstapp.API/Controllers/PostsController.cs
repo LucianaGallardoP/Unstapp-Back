@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities.Enums;
+using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 using Unstapp.Shared.Interfaces;
 
@@ -16,13 +17,16 @@ namespace Unstapp.API.Controllers
     {
         private readonly IPostService _postService;
         private readonly IModerationService _moderationService;
+        private readonly IWhatsAppNotificationDispatcher _whatsAppNotificationDispatcher;
 
         public PostsController(
             IPostService postService,
-            IModerationService moderationService)
+            IModerationService moderationService,
+            IWhatsAppNotificationDispatcher whatsAppNotificationDispatcher)
         {
             _postService = postService;
             _moderationService = moderationService;
+            _whatsAppNotificationDispatcher = whatsAppNotificationDispatcher;
         }
         
         [HttpGet]
@@ -75,6 +79,11 @@ namespace Unstapp.API.Controllers
 
                 if (!result.Success)
                     return StatusCode(result.Error!.StatusCode, result.Error);
+
+                if(result.Data!.isImportant)
+                {
+                    _whatsAppNotificationDispatcher.DispatchImportantPostNotification(result.Data.PostId);
+                }
 
                 return StatusCode(StatusCodes.Status201Created, result.Data);
             }

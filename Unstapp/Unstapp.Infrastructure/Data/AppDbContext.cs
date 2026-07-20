@@ -46,12 +46,13 @@ namespace Unstapp.Infrastructure.Data
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasKey(e => e.UserId);
-                entity.Property(e => e.Name).IsRequired();
-                entity.Property(e => e.LastName).IsRequired();
-                entity.Property(e => e.Email).IsRequired();
-                entity.Property(e => e.PhoneNumber).IsRequired();
+                entity.HasKey(u => u.UserId);
+                entity.Property(u => u.Name).IsRequired();
+                entity.Property(u => u.LastName).IsRequired();
+                entity.Property(u => u.Email).IsRequired();
+                entity.Property(u => u.PhoneNumber).IsRequired();
                 entity.Property(u => u.Bio).HasMaxLength(500);
+                entity.Property(u => u.WhatsAppNotificationsEnabled).HasDefaultValue(false);
             });
 
             modelBuilder.Entity<UserRole>(entity =>
@@ -77,6 +78,7 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(e => e.Content).HasMaxLength(500);
                 entity.Property(e => e.PostDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(p => p.Category).HasConversion<string>();
+                entity.Property(p => p.IsImportant).HasDefaultValue(false);
                 entity.Property(p => p.IsDeleted).HasDefaultValue(false);
 
                 entity.HasOne(e => e.User)
