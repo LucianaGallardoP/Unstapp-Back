@@ -1,11 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using Npgsql;
-using System.Security.Claims;
-using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
+using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.API.Controllers
 {
@@ -27,36 +24,27 @@ namespace Unstapp.API.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if(string.IsNullOrWhiteSpace(userIdClaim))
-                return Unauthorized(new { message = "Token inválido." });
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
 
             if(!int.TryParse(userIdClaim, out var userId))
-                return Unauthorized(new { message = "Identificador de usuario inválido." });
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_USER_ID",
+                    Message = "ID de usuario inválido."
+                });
 
             var result = await _likeService.ToggleLikeAsync(postId, userId);
 
-            return result switch
-            {
-                ToggleLikeResult.PostNotFound => NotFound(new { message = "La publicación no existe." }),
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
 
-                ToggleLikeResult.DuplicateLike => Conflict(new
-                {
-                    message = "El usuario ya le dio like a esta publicación."
-                }),
-
-                ToggleLikeResult.Liked => Ok(new
-                {
-                    message = "Like agregado correctamente.",
-                    isLiked = true
-                }),
-
-                ToggleLikeResult.Unliked => Ok(new
-                {
-                    message = "Like eliminado correctamente.",
-                    isLiked = false
-                }),
-
-                _ => StatusCode(500, new { message = "Error inesperado" })
-            };
+            return Ok(result);
         }
     }
 }
