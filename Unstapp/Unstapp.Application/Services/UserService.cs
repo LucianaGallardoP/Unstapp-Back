@@ -47,7 +47,7 @@ namespace Unstapp.Application.Services
             return ServiceResult<UserContextDto>.Ok(response);
         }
 
-        public async Task<ServiceResult<bool>> UpdateWhatsAppNotificationAsync(int userId, bool enable)
+        public async Task<ServiceResult<bool>> UpdateWhatsAppNotificationsAsync(int userId, bool enable)
         {
             if(userId <= 0)
                 return ServiceResult<bool>.Fail(
