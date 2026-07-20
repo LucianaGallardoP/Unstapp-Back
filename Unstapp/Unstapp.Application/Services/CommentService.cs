@@ -1,15 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Helpers;
 
 namespace Unstapp.Application.Services
 {
@@ -35,28 +31,37 @@ namespace Unstapp.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<List<CommentResponseDto>?> GetAllByPostAsync(int postId)
+        public async Task<ServiceResult<List<CommentResponseDto>?>> GetAllByPostAsync(int postId)
         {
             var postExists = await _postRepository.PostExistsAsync(postId);
 
             if (!postExists)
-                return null;
+                return ServiceResult<List<CommentResponseDto>?>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "POST_NOT_FOUND",
+                    "Post no encontrado."
+                );
 
             var comments = await _commentRepository.GetAllByPostWithRelationsAsync(postId);
 
             var commentDtos = _mapper.Map<List<CommentResponseDto>>(comments);
 
-            return commentDtos;
+            return ServiceResult<List<CommentResponseDto>?>.Ok(commentDtos);
         }
 
-        public async Task<CommentResponseDto?> AddAsync(
+        public async Task<ServiceResult<CommentResponseDto>> AddAsync(
             int postId,
             int userId,
             CreateCommentDto dto)
         {
             var postExists = await _postRepository.PostExistsAsync(postId);
+
             if (!postExists)
-                return null;
+                return ServiceResult<CommentResponseDto>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "POST_NOT_FOUND",
+                    "Post no encontrado."
+                );
 
             var comment = _mapper.Map<Comment>(dto);
             comment.UserId = userId;
@@ -69,7 +74,9 @@ namespace Unstapp.Application.Services
 
             var createdComment = await _commentRepository.GetByIdWithRelationsAsync(comment.CommentId);
 
-            return _mapper.Map<CommentResponseDto>(createdComment!);
+            var responseDto = _mapper.Map<CommentResponseDto>(createdComment);
+
+            return ServiceResult<CommentResponseDto>.Ok(responseDto);
         }
 
         public async Task<ServiceResult<bool>> DeleteAsync(int commentId, int currentUserId)
@@ -85,11 +92,7 @@ namespace Unstapp.Application.Services
 
             var roles = await _userRepository.GetRoleNameByUserIdAsync(currentUserId);
 
-            var isAdmin = roles.Any(role =>
-                role.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
-                role.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
-                role.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
-                role.Equals("Administrativo", StringComparison.OrdinalIgnoreCase));
+            var isAdmin = RoleHelper.IsAdmin(roles);
 
             var isCommentAuthor = comment.UserId == currentUserId;
             var isPostOwner = comment.Post.UserId == currentUserId;

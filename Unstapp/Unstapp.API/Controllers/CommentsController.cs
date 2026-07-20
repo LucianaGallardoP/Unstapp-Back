@@ -27,12 +27,12 @@ namespace Unstapp.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllByPost(int postId)
         {
-            var commentsDto = await _commentsService.GetAllByPostAsync(postId);
+            var result = await _commentsService.GetAllByPostAsync(postId);
 
-            if(commentsDto == null)
-                return NotFound(new { message = "Post no encontrado." });
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
 
-            return Ok(commentsDto);
+            return Ok(result.Data);
         }
 
         [HttpPost]
@@ -55,12 +55,15 @@ namespace Unstapp.API.Controllers
                 {
                     StatusCode = StatusCodes.Status401Unauthorized,
                     Code = "INVALID_TOKEN",
-                    Message = "Tóken inválido."
+                    Message = "Token inválido."
                 });
 
-            var comment = await _commentsService.AddAsync(postId, userId, dto);
+            var result = await _commentsService.AddAsync(postId, userId, dto);
 
-            return StatusCode(StatusCodes.Status201Created, comment) ;
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return StatusCode(StatusCodes.Status201Created, result.Data);
         }
 
         [HttpDelete("/api/comments/{id:int}")]
@@ -73,7 +76,7 @@ namespace Unstapp.API.Controllers
                 {
                     StatusCode = StatusCodes.Status401Unauthorized,
                     Code = "INVALID_TOKEN",
-                    Message = "Tóken inválido."
+                    Message = "Token inválido."
                 });
 
             var result = await _commentsService.DeleteAsync(id, currentUserId);
