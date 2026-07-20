@@ -3,8 +3,6 @@ using System.Text;
 using AutoMapper;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore.Storage;
-using Org.BouncyCastle.Security;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Application.Interfaces;
@@ -37,22 +35,19 @@ namespace Unstapp.Application.Services
 
             var userCareer = await _careerRepository.GetUserCareerAsync(userId);
             if (userCareer == null)
-            {
                 return ServiceResult<List<ScheduleResponseDto>>.Fail(
                     StatusCodes.Status404NotFound,
                     "CAREER_NOT_ASSIGNED",
                     "El usuario no tiene una carrera asignada."
                 );
-            }
 
             if (userCareer.Career == null)
-            {
                 return ServiceResult<List<ScheduleResponseDto>>.Fail(
                     StatusCodes.Status404NotFound,
                     "CAREER_NOT_FOUND",
                     "La carrera asignada al usuario no fue encontrada."
                 );
-            }
+
             var careerId = userCareer.CareerId;
             return await GetSchedulesCoreAsync(careerId, day);
         }
@@ -60,19 +55,21 @@ namespace Unstapp.Application.Services
 
         public async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesByCareerAsync(int careerId, string day)
         {
-
             var careerExists = await _careerRepository.CareerExistsAsync(careerId);
             if (!careerExists)
-            {
-                return ServiceResult<List<ScheduleResponseDto>>.Fail(404, "CAREER_NOT_FOUND", "La carrera especificada no existe.");
-            }
-
+                return ServiceResult<List<ScheduleResponseDto>>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "CAREER_NOT_FOUND",
+                    "La carrera especificada no existe."
+                );
 
             return await GetSchedulesCoreAsync(careerId, day);
         }
 
-
-        private async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesCoreAsync(int careerId, string day)
+        private async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesCoreAsync(
+            int careerId,
+            string day
+        )
         {
             var schedules = await _scheduleRepository.GetSchedulesByCareerAndDayAsync(careerId, day);
 
@@ -95,27 +92,22 @@ namespace Unstapp.Application.Services
 
             var careerExists = await _careerRepository.CareerExistsAsync(dto.CareerId);
             if (!careerExists)
-            {
                 return ServiceResult<ScheduleResponseDto>.Fail(
                     StatusCodes.Status404NotFound,
                     "CAREER_NOT_FOUND",
                     "La carrera especificada no existe."
                 );
-            }
-
 
             string cleanTime = dto.StartTime.Replace(" pm", "", StringComparison.OrdinalIgnoreCase)
                                             .Replace(" am", "", StringComparison.OrdinalIgnoreCase)
                                             .Trim();
 
             if (!TimeSpan.TryParse(cleanTime, out TimeSpan parsedTime))
-            {
                 return ServiceResult<ScheduleResponseDto>.Fail(
                     StatusCodes.Status400BadRequest,
                     "INVALID_TIME_FORMAT",
                     "El formato de la hora de inicio es inválido."
                 );
-            }
 
             var newSchedule = _mapper.Map<Schedule>(dto);
             newSchedule.StartTime = parsedTime;
@@ -124,13 +116,11 @@ namespace Unstapp.Application.Services
             var schedule = await _scheduleRepository.GetScheduleByIdAsync(newSchedule.Id);
 
             if (schedule == null)
-            {
                 return ServiceResult<ScheduleResponseDto>.Fail(
                     StatusCodes.Status404NotFound,
                     "SCHEDULE_NOT_FOUND",
                     "El horario no se registró en nuestra base de datos."
                 );
-            }
 
             var response = _mapper.Map<ScheduleResponseDto>(schedule);
 
@@ -241,7 +231,7 @@ namespace Unstapp.Application.Services
                 return ServiceResult<ScheduleResponseDto>.Fail(
                     StatusCodes.Status404NotFound,
                     "SCHEDULE_NOT_FOUND",
-                    "El horario no se pudo actualizar correctamente en nuestra base de datos."
+                    "El horario no se encontró en nuestra base de datos."
                 );
 
             var response = _mapper.Map<ScheduleResponseDto>(updatedSchedule);
@@ -342,22 +332,18 @@ namespace Unstapp.Application.Services
                 var normalizedCareerName = NormalizeText(careerName);
 
                 if(!careersByName.TryGetValue(normalizedCareerName, out var matchingCareers))
-                {
                     return ServiceResult<ScheduleImportResponseDto>.Fail(
                         StatusCodes.Status400BadRequest,
                         "CAREER_NOT_FOUND",
                         $"Fila {rowNumber}: La carrera '{careerName}' no existe en la base de datos."
                     );
-                }
 
                 if(matchingCareers.Count > 1)
-                {
                     return ServiceResult<ScheduleImportResponseDto>.Fail(
                         StatusCodes.Status400BadRequest,
                         "AMBIGUOUS_CAREER_NAME",
                         $"Fila {rowNumber}: La carrera '{careerName}' coincide con más de una carrera. Por favor, asegúrese de que el nombre de la carrera sea único."
                     );
-                }
 
                 var career = matchingCareers.First();
 

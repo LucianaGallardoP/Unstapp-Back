@@ -24,9 +24,12 @@ namespace Unstapp.API.Controllers
         public async Task<IActionResult> GetHorariosDelDia([FromQuery] string dia, [FromQuery] int? careerId)
         {
             if (string.IsNullOrWhiteSpace(dia))
-            {
-                return BadRequest(new { mensaje = "El parámetro 'dia' es obligatorio." });
-            }
+                return BadRequest(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Code = "DAY_REQUIRED",
+                    Message = "El parámetro 'dia' es obligatorio."
+                });
 
             if (careerId.HasValue && careerId.Value > 0)
             {
@@ -48,7 +51,6 @@ namespace Unstapp.API.Controllers
 
                 return Ok(adminResult.Data);
             }
-
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdClaim, out int userId))
