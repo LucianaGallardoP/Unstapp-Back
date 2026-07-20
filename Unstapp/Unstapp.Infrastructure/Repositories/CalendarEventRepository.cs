@@ -36,5 +36,17 @@ namespace Unstapp.Infrastructure.Repositories
             await _context.CalendarEvents.AddAsync(calendarEvent);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<CalendarEvent?> GetByIdAsync(int eventId)
+        {
+            return await _context.CalendarEvents
+                .FirstOrDefaultAsync(e => e.CalendarEventId == eventId);
+        }
+
+        public async Task DeleteEventAsync(CalendarEvent calendarEvent)
+        {
+            _context.CalendarEvents.Remove(calendarEvent);
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -76,5 +76,17 @@ namespace Unstapp.API.Controllers
 
             return Ok(result.Data);
         }
+
+        [HttpDelete("events/{eventId:int}")]
+        [Authorize(Roles = "Administracion")]
+        public async Task<IActionResult> DeleteEvent(int eventId)
+        {
+            var result = await _calendarService.DeleteEventAsync(eventId);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return NoContent();
+        }
     }
 }

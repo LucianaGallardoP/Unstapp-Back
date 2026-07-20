@@ -18,5 +18,6 @@ namespace Unstapp.Application.Interfaces
             int currentUserId);
         Task<ServiceResult<List<CalendarEventDto>>> GetTodayEventsAsync();
         Task<ServiceResult<List<CalendarEventDto>>> GetEventsByDayAsync(DateTime date);
+        Task<ServiceResult<bool>> DeleteEventAsync(int eventId);
     }
 }

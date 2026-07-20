@@ -11,5 +11,7 @@ namespace Unstapp.Infrastructure.Interfaces
     {
         Task<List<CalendarEvent>> GetEventsByRangeAsync(DateTime start, DateTime end);
         Task AddAsync(CalendarEvent calendarEvent);
+        Task<CalendarEvent?> GetByIdAsync(int eventId);
+        Task DeleteEventAsync(CalendarEvent calendarEvent);
     }
 }

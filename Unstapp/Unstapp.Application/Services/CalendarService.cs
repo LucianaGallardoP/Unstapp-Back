@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
@@ -156,6 +151,29 @@ namespace Unstapp.Application.Services
                 );
 
             return ServiceResult<List<CalendarEventDto>>.Ok(result.Data!.Events);
+        }
+
+        public async Task<ServiceResult<bool>> DeleteEventAsync(int eventId)
+        {
+            if (eventId < 0)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_EVENT_ID",
+                    "El ID del evento no es válido."
+                );
+
+            var calendarEvent = await _calendarEventRepository.GetByIdAsync(eventId);
+
+            if (calendarEvent == null)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status404NotFound,
+                    "EVENT_NOT_FOUND",
+                    "Evento no encontrado."
+                );
+
+            await _calendarEventRepository.DeleteEventAsync(calendarEvent);
+
+            return ServiceResult<bool>.Ok(true);
         }
 
         private static bool CanCreateCalendarEvent(List<string> roles, CalendarEventType eventType)
