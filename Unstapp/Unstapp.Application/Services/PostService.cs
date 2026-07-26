@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Posts;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Entities.Enums;
@@ -141,16 +142,33 @@ namespace Unstapp.Application.Services
             return ServiceResult<PostDto>.Ok(responseDto);
         }
 
-        public async Task<ServiceResult<List<PostDto>>> GetAllAsync(int userId, PostFilter filter)
+        public async Task<ServiceResult<PaginatedPostsResponseDto>> GetAllAsync(int userId, PostFilter filter, int page, int limit)
         {
-            var posts = await _postRepository.GetFilteredPostsAsync(userId, filter);
 
-            var response = posts.Select(post =>
+            if(userId <= 0)
+                return ServiceResult<PaginatedPostsResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_USER_ID",
+                    "El id del usuario no es válido."
+                );
+
+            if(page <= 0)
+                page = 1;
+
+            if(limit <= 0)
+                limit = 15;
+
+            if (limit > 50)
+                limit = 50;
+
+            var result = await _postRepository.GetFilteredPostsAsync(userId, filter, page, limit);
+
+            var postDtos = result.Posts.Select(post =>
             {
                 var dto = _mapper.Map<PostDto>(post);
 
                 dto.AuthorRoleName = ResolveDisplayRole(
-                    post.User.UserRoles.Select(ur => ur.Role.Name)
+                    post.User.UserRoles.Select(Ur => Ur.Role.Name)
                 );
 
                 dto.LikesCount = post.Likes.Count();
@@ -160,7 +178,13 @@ namespace Unstapp.Application.Services
                 return dto;
             }).ToList();
 
-            return ServiceResult<List<PostDto>>.Ok(response);
+            var response = new PaginatedPostsResponseDto
+            {
+                Posts = postDtos,
+                HasMore = result.HasMore
+            };
+
+            return ServiceResult<PaginatedPostsResponseDto>.Ok(response);
         }
 
         public async Task<ServiceResult<PostDto>> GetByIdAsync(int userId, int postId)

@@ -58,7 +58,11 @@ namespace Unstapp.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Post>> GetFilteredPostsAsync(int userId, PostFilter filter)
+        public async Task<(List<Post> Posts, bool HasMore)> GetFilteredPostsAsync(
+            int userId,
+            PostFilter filter,
+            int page,
+            int limit)
         {
             var query = _context.Posts
                 .AsNoTracking()
@@ -73,23 +77,38 @@ namespace Unstapp.Infrastructure.Repositories
                 .AsSplitQuery()
                 .AsQueryable();
 
-            if(filter == PostFilter.MiCarrera)
+            if (filter == PostFilter.MiCarrera)
             {
                 var userCareerIds = await _userRepository.GetCareerIdsByUserIdAsync(userId);
 
+                if (userCareerIds.Count == 0)
+                    return (new List<Post>(), false);
+
                 query = query.Where(p =>
-                    p.Category == PostCategory.General
-                    && p.PostCareers.Any(pc => userCareerIds.Contains(pc.CareerId)));
+                    p.Category == PostCategory.General &&
+                    p.PostCareers.Any(pc => userCareerIds.Contains(pc.CareerId)));
             }
 
-            if(filter == PostFilter.Administrativo)
+            if (filter == PostFilter.Administrativo)
             {
                 query = query.Where(p => p.Category == PostCategory.Administrativo);
             }
 
-            return await query
+            var skip = (page - 1) * limit;
+
+            var postsPlusOne = await query
                 .OrderByDescending(p => p.PostDate)
+                .Skip(skip)
+                .Take(limit + 1)
                 .ToListAsync();
+
+            var hasMore = postsPlusOne.Count > limit;
+
+            var posts = postsPlusOne
+                .Take(limit)
+                .ToList();
+
+            return (posts, hasMore);
         }
 
         public async Task<bool> PostExistsAsync(int postId)

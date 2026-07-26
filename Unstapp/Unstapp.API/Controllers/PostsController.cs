@@ -30,7 +30,7 @@ namespace Unstapp.API.Controllers
         }
         
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] PostFilter filter = PostFilter.Todos)
+        public async Task<IActionResult> GetAll([FromQuery] PostFilter filter = PostFilter.Todos, [FromQuery] int page = 1, [FromQuery] int limit = 15)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -42,7 +42,7 @@ namespace Unstapp.API.Controllers
                     Message = "Token inválido."
                 });
 
-            var result = await _postService.GetAllAsync(userId, filter);
+            var result = await _postService.GetAllAsync(userId, filter, page, limit);
 
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
