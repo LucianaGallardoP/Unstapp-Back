@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Unstapp.Infrastructure.Entities;
+﻿using Unstapp.Infrastructure.Entities;
 
 namespace Unstapp.Infrastructure.Interfaces
 {
     public interface IScheduleRepository
     {
-        Task<List<Schedule>> GetSchedulesByCareerAndDayAsync(int careerId, string day);
+        Task<List<Schedule>> GetSchedulesByCareerAndDayAsync(int careerId, string day, int year);
         Task AddNewScheduleAsync(Schedule schedule);
         Task<Schedule?> GetScheduleByIdAsync(int scheduleId);
         Task UpdateScheduleAsync(Schedule schedule);

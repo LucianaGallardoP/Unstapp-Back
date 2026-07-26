@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using CloudinaryDotNet.Actions;
-using Unstapp.Application.DTOs;
 using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Infrastructure.Entities;
 

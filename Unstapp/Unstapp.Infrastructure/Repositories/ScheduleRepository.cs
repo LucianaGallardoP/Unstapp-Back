@@ -14,10 +14,14 @@ namespace Unstapp.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<List<Schedule>> GetSchedulesByCareerAndDayAsync(int careerId, string day)
+        public async Task<List<Schedule>> GetSchedulesByCareerAndDayAsync(int careerId, string day, int year)
         {
             return await _context.Schedules
-                .Where(s => s.CareerId == careerId && s.Day.ToLower() == day.ToLower() && !s.IsDeleted)
+                .Where(s => s.CareerId == careerId &&
+                    s.Day.ToLower() == day.ToLower() &&
+                    s.Year == year &&
+                    !s.IsDeleted
+                )
                 .OrderBy(s => s.StartTime)
                 .ToListAsync();
         }

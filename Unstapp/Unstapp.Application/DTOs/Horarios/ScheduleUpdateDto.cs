@@ -15,5 +15,6 @@ namespace Unstapp.Application.DTOs.Horarios
         public string? Day { get; set; }
         public string? StartTime { get; set; }
         public decimal? DurationHours { get; set; }
+        public int? Year { get; set; }
     }
 }

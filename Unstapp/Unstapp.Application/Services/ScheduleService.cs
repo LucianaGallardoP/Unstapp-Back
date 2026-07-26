@@ -3,7 +3,6 @@ using System.Text;
 using AutoMapper;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
-using Unstapp.Application.DTOs;
 using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
@@ -30,7 +29,7 @@ namespace Unstapp.Application.Services
         }
 
 
-        public async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesByDayAsync(int userId, string day)
+        public async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesByDayAsync(int userId, string day, int year)
         {
 
             var userCareer = await _careerRepository.GetUserCareerAsync(userId);
@@ -48,12 +47,21 @@ namespace Unstapp.Application.Services
                     "La carrera asignada al usuario no fue encontrada."
                 );
 
+            if (year <= 0)
+            {
+                return ServiceResult<List<ScheduleResponseDto>>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_YEAR",
+                    "El año no es válido."
+                );
+            }
+
             var careerId = userCareer.CareerId;
-            return await GetSchedulesCoreAsync(careerId, day);
+            return await GetSchedulesCoreAsync(careerId, day, year);
         }
 
 
-        public async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesByCareerAsync(int careerId, string day)
+        public async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesByCareerAsync(int careerId, string day, int year)
         {
             var careerExists = await _careerRepository.CareerExistsAsync(careerId);
             if (!careerExists)
@@ -63,15 +71,16 @@ namespace Unstapp.Application.Services
                     "La carrera especificada no existe."
                 );
 
-            return await GetSchedulesCoreAsync(careerId, day);
+            return await GetSchedulesCoreAsync(careerId, day, year);
         }
 
         private async Task<ServiceResult<List<ScheduleResponseDto>>> GetSchedulesCoreAsync(
             int careerId,
-            string day
+            string day,
+            int year
         )
         {
-            var schedules = await _scheduleRepository.GetSchedulesByCareerAndDayAsync(careerId, day);
+            var schedules = await _scheduleRepository.GetSchedulesByCareerAndDayAsync(careerId, day, year);
 
             var resultDto = schedules.Select(s => new ScheduleResponseDto
             {
@@ -80,7 +89,8 @@ namespace Unstapp.Application.Services
                 StartTime = s.StartTime.ToString(@"hh\:mm"),
                 DurationHours = s.DurationHours,
                 Professor = s.Professor,
-                Classroom = s.Classroom
+                Classroom = s.Classroom,
+                Year = s.Year,
             }).ToList();
 
             return ServiceResult<List<ScheduleResponseDto>>.Ok(resultDto);
@@ -89,6 +99,12 @@ namespace Unstapp.Application.Services
 
         public async Task<ServiceResult<ScheduleResponseDto>> CreateScheduleAsync(ScheduleCreateDto dto)
         {
+            if(dto.Year <= 0)
+                return ServiceResult<ScheduleResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_YEAR",
+                    "El año especificado es inválido."
+                );
 
             var careerExists = await _careerRepository.CareerExistsAsync(dto.CareerId);
             if (!careerExists)
@@ -262,7 +278,7 @@ namespace Unstapp.Application.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        // Se asume que el excel viene en este formato: Carrera | Materia | Día | HoraInicio | Duracion | Profesor | Aula
+        // Se asume que el excel viene en este formato: Carrera | Año | Materia | Día | HoraInicio | Duracion | Profesor | Aula
         public async Task<ServiceResult<ScheduleImportResponseDto>> ImportSchedulesAsync(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -304,12 +320,13 @@ namespace Unstapp.Application.Services
                     continue;
 
                 var careerName = reader.GetValue(0)?.ToString()?.Trim();
-                var subject = reader.GetValue(1)?.ToString()?.Trim();
-                var day = reader.GetValue(2)?.ToString()?.Trim();
-                var startTimeValue = reader.GetValue(3)?.ToString()?.Trim();
-                var durationValue = reader.GetValue(4)?.ToString()?.Trim();
-                var professor = reader.GetValue(5)?.ToString()?.Trim();
-                var classroom = reader.GetValue(6)?.ToString()?.Trim();
+                var yearValue = reader.GetValue(1);
+                var subject = reader.GetValue(2)?.ToString()?.Trim();
+                var day = reader.GetValue(3)?.ToString()?.Trim();
+                var startTimeValue = reader.GetValue(4);
+                var durationValue = reader.GetValue(5);
+                var professor = reader.GetValue(6)?.ToString()?.Trim();
+                var classroom = reader.GetValue(7)?.ToString()?.Trim();
 
                 var isEmptyRow = string.IsNullOrWhiteSpace(careerName) &&
                                  string.IsNullOrWhiteSpace(subject) &&
@@ -347,6 +364,15 @@ namespace Unstapp.Application.Services
 
                 var career = matchingCareers.First();
 
+                if (!TryParseExcelInt(yearValue, out var year) || year <= 0)
+                {
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "INVALID_YEAR",
+                        $"Fila {rowNumber}: el año es inválido."
+                    );
+                }
+
                 if (string.IsNullOrWhiteSpace(subject))
                     return ServiceResult<ScheduleImportResponseDto>.Fail(
                         StatusCodes.Status400BadRequest,
@@ -378,6 +404,7 @@ namespace Unstapp.Application.Services
                 schedules.Add(new Schedule
                 {
                     CareerId = career.CareerId,
+                    Year = year,
                     Subject = subject.Trim(),
                     Day = day.Trim(),
                     StartTime = startTime,
@@ -571,6 +598,45 @@ namespace Unstapp.Application.Services
                 return true;
 
             return false;
+        }
+
+        private static bool TryParseExcelInt(object? value, out int number)
+        {
+            number = default;
+
+            if(value == null)
+                return false;
+
+            if(value is int intValue)
+            {
+                number = intValue;
+                return true;
+            }
+
+            if (value is double doubleValue)
+            {
+                if(doubleValue % 1 != 0)
+                    return false;
+
+                number = Convert.ToInt32(doubleValue);
+                return true;
+            }
+
+            if (value is decimal decimalValue)
+            {
+                if(decimalValue % 1 != 0)
+                    return false;
+
+                number = Convert.ToInt32(decimalValue);
+                return true;
+            }
+
+            var text = value?.ToString()?.Trim();
+
+            if(string.IsNullOrWhiteSpace(text))
+                return false;
+
+            return int.TryParse(text, out number);
         }
     }
 }

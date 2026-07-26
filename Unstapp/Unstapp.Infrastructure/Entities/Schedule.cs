@@ -14,5 +14,6 @@ namespace Unstapp.Infrastructure.Entities
         public string Classroom { get; set; } = string.Empty;
         public bool IsDeleted { get; set; } = false;
         public Career Career { get; set; } = null!;
+        public int Year { get; set; }
     }
 }

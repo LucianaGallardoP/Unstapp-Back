@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Unstapp.Application.DTOs
+namespace Unstapp.Application.DTOs.Horarios
 {
     public class ScheduleCreateDto
     {
@@ -20,5 +20,6 @@ namespace Unstapp.Application.DTOs
         public string Classroom { get; set; } = string.Empty;
         
         public decimal DurationHours { get; set; }
+        public int Year { get; set; }
     }
 }

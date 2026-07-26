@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Unstapp.Application.DTOs;
 using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Application.Interfaces;
 using Unstapp.Shared.DTOs.Common;
@@ -21,7 +20,10 @@ namespace Unstapp.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetHorariosDelDia([FromQuery] string dia, [FromQuery] int? careerId)
+        public async Task<IActionResult> GetHorariosDelDia(
+            [FromQuery] string dia,
+            [FromQuery] int? careerId,
+            [FromQuery] int? year)
         {
             if (string.IsNullOrWhiteSpace(dia))
                 return BadRequest(new ApiErrorResponse
@@ -29,6 +31,22 @@ namespace Unstapp.API.Controllers
                     StatusCode = StatusCodes.Status400BadRequest,
                     Code = "DAY_REQUIRED",
                     Message = "El parámetro 'dia' es obligatorio."
+                });
+
+            if (!year.HasValue)
+                return BadRequest(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Code = "YEAR_REQUIRED",
+                    Message = "El parámetro 'year' es obligatorio."
+                });
+
+            if (year.Value <= 0)
+                return BadRequest(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Code = "INVALID_YEAR",
+                    Message = "El año no es válido."
                 });
 
             if (careerId.HasValue && careerId.Value > 0)
@@ -44,7 +62,11 @@ namespace Unstapp.API.Controllers
                         }
                     );
 
-                var adminResult = await _scheduleService.GetSchedulesByCareerAsync(careerId.Value, dia);
+                var adminResult = await _scheduleService.GetSchedulesByCareerAsync(
+                    careerId.Value,
+                    dia,
+                    year.Value
+                );
 
                 if (!adminResult.Success)
                     return StatusCode(adminResult.Error!.StatusCode, adminResult.Error);
@@ -61,7 +83,7 @@ namespace Unstapp.API.Controllers
                     Message = "Token inválido."
                 });
 
-            var studentResult = await _scheduleService.GetSchedulesByDayAsync(userId, dia);
+            var studentResult = await _scheduleService.GetSchedulesByDayAsync(userId, dia, year.Value);
 
             if (!studentResult.Success)
                 return StatusCode(studentResult.Error!.StatusCode, studentResult.Error);

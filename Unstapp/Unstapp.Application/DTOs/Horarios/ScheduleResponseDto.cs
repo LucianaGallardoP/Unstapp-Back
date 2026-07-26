@@ -10,5 +10,6 @@ namespace Unstapp.Application.DTOs.Horarios
         public decimal DurationHours { get; set; }
         public string Professor { get; set; } = string.Empty;
         public string Classroom { get; set; } = string.Empty;
+        public int Year { get; set; }
     }
 }

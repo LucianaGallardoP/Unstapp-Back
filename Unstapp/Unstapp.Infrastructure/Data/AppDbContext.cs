@@ -264,6 +264,7 @@ namespace Unstapp.Infrastructure.Data
                  entity.Property(s => s.Professor).IsRequired().HasMaxLength(100);
                  entity.Property(s => s.Classroom).IsRequired().HasMaxLength(50);
                  entity.Property(s => s.IsDeleted).HasDefaultValue(false);
+                 entity.Property(s => s.Year).IsRequired();
 
                  entity.HasOne(s => s.Career)
                      .WithMany(c => c.Schedules)
