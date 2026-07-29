@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Users;
 using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.Application.Interfaces
@@ -12,5 +13,6 @@ namespace Unstapp.Application.Interfaces
     {
         Task<ServiceResult<UserContextDto>> GetUserContextAsync(int userId);
         Task<ServiceResult<bool>> UpdateWhatsAppNotificationsAsync(int userId, bool enable);
+        Task<ServiceResult<UserCareerResponseDto?>> GetMyCareerAsync(int userId);
     }
 }

@@ -35,7 +35,7 @@ namespace Unstapp.Infrastructure.Repositories
         {
             return await _context.UserCareers
                 .AsNoTracking()
-                .Include(c => c.Career)
+                .Include(uc => uc.Career)
                     .ThenInclude(c => c.Faculty)
                 .FirstOrDefaultAsync(uc => uc.UserId == userId);
         }

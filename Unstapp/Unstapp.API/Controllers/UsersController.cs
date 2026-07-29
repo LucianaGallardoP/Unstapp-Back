@@ -114,5 +114,29 @@ namespace Unstapp.API.Controllers
                 WhatsAppNotificationsEnabled = result.Data
             });
         }
+
+        [HttpGet("me/career")]
+        public async Task<IActionResult> GetMyCareer()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
+
+            var result = await _userService.GetMyCareerAsync(currentUserId);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            if (result.Data == null)
+                return NoContent();
+
+            return Ok(result.Data);
+        }
     }
 }
