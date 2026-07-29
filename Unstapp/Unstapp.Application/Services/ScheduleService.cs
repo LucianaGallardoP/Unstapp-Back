@@ -47,15 +47,6 @@ namespace Unstapp.Application.Services
                     "La carrera asignada al usuario no fue encontrada."
                 );
 
-            if (year <= 0)
-            {
-                return ServiceResult<List<ScheduleResponseDto>>.Fail(
-                    StatusCodes.Status400BadRequest,
-                    "INVALID_YEAR",
-                    "El año no es válido."
-                );
-            }
-
             var careerId = userCareer.CareerId;
             return await GetSchedulesCoreAsync(careerId, day, year);
         }
@@ -80,6 +71,21 @@ namespace Unstapp.Application.Services
             int year
         )
         {
+
+            if (string.IsNullOrWhiteSpace(day))
+                return ServiceResult<List<ScheduleResponseDto>>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "DAY_REQUIRED",
+                    "El día es obligatorio."
+                );
+
+            if (year <= 0)
+                return ServiceResult<List<ScheduleResponseDto>>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_YEAR",
+                    "El año no es válido."
+                );
+
             var schedules = await _scheduleRepository.GetSchedulesByCareerAndDayAsync(careerId, day, year);
 
             var resultDto = schedules.Select(s => new ScheduleResponseDto
@@ -114,11 +120,7 @@ namespace Unstapp.Application.Services
                     "La carrera especificada no existe."
                 );
 
-            string cleanTime = dto.StartTime.Replace(" pm", "", StringComparison.OrdinalIgnoreCase)
-                                            .Replace(" am", "", StringComparison.OrdinalIgnoreCase)
-                                            .Trim();
-
-            if (!TimeSpan.TryParse(cleanTime, out TimeSpan parsedTime))
+            if (!TryParseExcelTime(dto.StartTime, out TimeSpan parsedTime))
                 return ServiceResult<ScheduleResponseDto>.Fail(
                     StatusCodes.Status400BadRequest,
                     "INVALID_TIME_FORMAT",
@@ -220,12 +222,7 @@ namespace Unstapp.Application.Services
                     );
                 }
 
-                string cleanTime = dto.StartTime
-                    .Replace(" pm", "", StringComparison.OrdinalIgnoreCase)
-                    .Replace(" am", "", StringComparison.OrdinalIgnoreCase)
-                    .Trim();
-
-                if (!TimeSpan.TryParse(cleanTime, out TimeSpan parsedTime))
+                if (!TryParseExcelTime(dto.StartTime, out TimeSpan parsedTime))
                 {
                     return ServiceResult<ScheduleResponseDto>.Fail(
                         StatusCodes.Status400BadRequest,
@@ -311,108 +308,120 @@ namespace Unstapp.Application.Services
 
             var rowNumber = 0;
 
-            while (reader.Read())
+            try
             {
-                rowNumber++;
-
-                // Saltar encabezado
-                if (rowNumber == 1)
-                    continue;
-
-                var careerName = reader.GetValue(0)?.ToString()?.Trim();
-                var yearValue = reader.GetValue(1);
-                var subject = reader.GetValue(2)?.ToString()?.Trim();
-                var day = reader.GetValue(3)?.ToString()?.Trim();
-                var startTimeValue = reader.GetValue(4);
-                var durationValue = reader.GetValue(5);
-                var professor = reader.GetValue(6)?.ToString()?.Trim();
-                var classroom = reader.GetValue(7)?.ToString()?.Trim();
-
-                var isEmptyRow = string.IsNullOrWhiteSpace(careerName) &&
-                                 string.IsNullOrWhiteSpace(subject) &&
-                                 string.IsNullOrWhiteSpace(day) &&
-                                 startTimeValue == null &&
-                                 durationValue == null &&
-                                 string.IsNullOrWhiteSpace(professor) &&
-                                 string.IsNullOrWhiteSpace(classroom);
-
-                if (isEmptyRow)
-                    continue;
-
-                if (string.IsNullOrWhiteSpace(careerName))
-                    return ServiceResult<ScheduleImportResponseDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "CAREER_REQUIRED",
-                        $"Fila {rowNumber}: La Carrera es obligatoria."
-                    );
-
-                var normalizedCareerName = NormalizeText(careerName);
-
-                if(!careersByName.TryGetValue(normalizedCareerName, out var matchingCareers))
-                    return ServiceResult<ScheduleImportResponseDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "CAREER_NOT_FOUND",
-                        $"Fila {rowNumber}: La carrera '{careerName}' no existe en la base de datos."
-                    );
-
-                if(matchingCareers.Count > 1)
-                    return ServiceResult<ScheduleImportResponseDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "AMBIGUOUS_CAREER_NAME",
-                        $"Fila {rowNumber}: La carrera '{careerName}' coincide con más de una carrera. Por favor, asegúrese de que el nombre de la carrera sea único."
-                    );
-
-                var career = matchingCareers.First();
-
-                if (!TryParseExcelInt(yearValue, out var year) || year <= 0)
+                while (reader.Read())
                 {
-                    return ServiceResult<ScheduleImportResponseDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "INVALID_YEAR",
-                        $"Fila {rowNumber}: el año es inválido."
-                    );
+                    rowNumber++;
+
+                    // Saltar encabezado
+                    if (rowNumber == 1)
+                        continue;
+
+                    var careerName = GetCellValue(reader, 0)?.ToString()?.Trim();
+                    var yearValue = GetCellValue(reader, 1);
+                    var subject = GetCellValue(reader, 2)?.ToString()?.Trim();
+                    var day = GetCellValue(reader, 3)?.ToString()?.Trim();
+                    var startTimeValue = GetCellValue(reader, 4);
+                    var durationValue = GetCellValue(reader, 5);
+                    var professor = GetCellValue(reader, 6)?.ToString()?.Trim();
+                    var classroom = GetCellValue(reader, 7)?.ToString()?.Trim();
+
+                    var isEmptyRow = string.IsNullOrWhiteSpace(careerName) &&
+                                     IsEmptyExcelValue(yearValue) &&
+                                     string.IsNullOrWhiteSpace(subject) &&
+                                     string.IsNullOrWhiteSpace(day) &&
+                                     IsEmptyExcelValue(startTimeValue) &&
+                                     IsEmptyExcelValue(durationValue) &&
+                                     string.IsNullOrWhiteSpace(professor) &&
+                                     string.IsNullOrWhiteSpace(classroom);
+
+                    if (isEmptyRow)
+                        continue;
+
+                    if (string.IsNullOrWhiteSpace(careerName))
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "CAREER_REQUIRED",
+                            $"Fila {rowNumber}: La Carrera es obligatoria."
+                        );
+
+                    var normalizedCareerName = NormalizeText(careerName);
+
+                    if (!careersByName.TryGetValue(normalizedCareerName, out var matchingCareers))
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "CAREER_NOT_FOUND",
+                            $"Fila {rowNumber}: La carrera '{careerName}' no existe en la base de datos."
+                        );
+
+                    if (matchingCareers.Count > 1)
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "AMBIGUOUS_CAREER_NAME",
+                            $"Fila {rowNumber}: La carrera '{careerName}' coincide con más de una carrera. Por favor, asegúrese de que el nombre de la carrera sea único."
+                        );
+
+                    var career = matchingCareers.First();
+
+                    if (!TryParseExcelInt(yearValue, out var year) || year <= 0)
+                    {
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "INVALID_YEAR",
+                            $"Fila {rowNumber}: el año es inválido."
+                        );
+                    }
+
+                    if (string.IsNullOrWhiteSpace(subject))
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "SUBJECT_REQUIRED",
+                            $"Fila {rowNumber}: La materia es requerida."
+                        );
+
+                    if (string.IsNullOrWhiteSpace(day))
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "DAY_REQUIRED",
+                            $"Fila {rowNumber}: El día es requerido."
+                        );
+
+                    if (!TryParseExcelTime(startTimeValue, out var startTime))
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "INVALID_START_TIME_FORMAT",
+                            $"Fila {rowNumber}: El formato de la hora de inicio es inválido."
+                        );
+
+                    if (!TryParseExcelDecimal(durationValue, out var durationHours) || durationHours <= 0)
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "INVALID_DURATION",
+                            $"Fila {rowNumber}: La duración debe ser un número mayor a cero."
+                        );
+
+                    schedules.Add(new Schedule
+                    {
+                        CareerId = career.CareerId,
+                        Year = year,
+                        Subject = subject.Trim(),
+                        Day = day.Trim(),
+                        StartTime = startTime,
+                        DurationHours = durationHours,
+                        Professor = string.IsNullOrWhiteSpace(professor) ? string.Empty : professor.Trim(),
+                        Classroom = string.IsNullOrWhiteSpace(classroom) ? string.Empty : classroom.Trim(),
+                        IsDeleted = false
+                    });
                 }
-
-                if (string.IsNullOrWhiteSpace(subject))
-                    return ServiceResult<ScheduleImportResponseDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "SUBJECT_REQUIRED",
-                        $"Fila {rowNumber}: La materia es requerida."
-                    );
-
-                if (string.IsNullOrWhiteSpace(day))
-                    return ServiceResult<ScheduleImportResponseDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "DAY_REQUIRED",
-                        $"Fila {rowNumber}: El día es requerido."
-                    );
-
-                if (!TryParseExcelTime(startTimeValue, out var startTime))
-                    return ServiceResult<ScheduleImportResponseDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "INVALID_START_TIME_FORMAT",
-                        $"Fila {rowNumber}: El formato de la hora de inicio es inválido."
-                    );
-
-                if (!TryParseExcelDecimal(durationValue, out var durationHours) || durationHours <= 0)
-                    return ServiceResult<ScheduleImportResponseDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "INVALID_DURATION",
-                        $"Fila {rowNumber}: La duración debe ser un número mayor a cero."
-                    );
-
-                schedules.Add(new Schedule
-                {
-                    CareerId = career.CareerId,
-                    Year = year,
-                    Subject = subject.Trim(),
-                    Day = day.Trim(),
-                    StartTime = startTime,
-                    DurationHours = durationHours,
-                    Professor = string.IsNullOrWhiteSpace(professor) ? string.Empty : professor.Trim(),
-                    Classroom = string.IsNullOrWhiteSpace(classroom) ? string.Empty : classroom.Trim(),
-                    IsDeleted = false
-                });
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<ScheduleImportResponseDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_EXCEL_FILE",
+                    "No se pudo procesar el archivo Excel. Verificá que respete el formato de la plantilla."
+                );
             }
 
             if (schedules.Count == 0)
@@ -637,6 +646,19 @@ namespace Unstapp.Application.Services
                 return false;
 
             return int.TryParse(text, out number);
+        }
+
+        private static object? GetCellValue(IExcelDataReader dataReader, int index)
+        {
+            if (index < 0 || index >= dataReader.FieldCount)
+                return null;
+
+            return dataReader.GetValue(index);
+        }
+
+        private static bool IsEmptyExcelValue(object? value)
+        {
+            return value == null || string.IsNullOrWhiteSpace(value.ToString());
         }
     }
 }
