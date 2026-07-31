@@ -7,6 +7,7 @@ using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Entities.Enums;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Helpers;
 using Unstapp.Shared.Interfaces;
 
 namespace Unstapp.Application.Services
@@ -47,12 +48,7 @@ namespace Unstapp.Application.Services
 
             var category = ResolvePostCategoryFromRoles(roles);
 
-            var isAdmin = roles.Any(r =>
-                r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
-                r.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
-                r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
-                r.Equals("Administrativo", StringComparison.OrdinalIgnoreCase)
-            );
+            var canCreateImportantPost = RoleHelper.IsAdmin(roles) || RoleHelper.IsProffesor(roles);
 
             var isGeneralPost = category == PostCategory.General;
 
@@ -120,7 +116,7 @@ namespace Unstapp.Application.Services
             post.PostDate = DateTime.UtcNow;
             post.MediaUrl = mediaUrl;
             post.Category = category;
-            post.IsImportant = isAdmin && dto.IsImportant;
+            post.IsImportant = canCreateImportantPost && dto.IsImportant;
 
             await _postRepository.AddPostWithCareersAsync(post, postCareerIds);
 

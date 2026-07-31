@@ -25,7 +25,7 @@ namespace Unstapp.Infrastructure.Services
 
         public async Task NotifyImportantPostAsync(int postId)
         {
-            var post = await _whatsAppNotificationRepository.GetImportantAdministrationPostAsync(postId);
+            var post = await _whatsAppNotificationRepository.GetImportantPostAsync(postId);
 
             if (post == null)
             {
@@ -70,6 +70,7 @@ namespace Unstapp.Infrastructure.Services
                     ToPhoneNumber = recipient.PhoneNumber,
                     StudentName = recipient.FullName,
                     PostTitle = post.Content,
+                    SenderName = post.SenderName,
                     Subject =  destinationText,
                     DateText = post.PostDate.ToString("dd/MM/yyyy")
                 });

@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Comentarios;
 using Unstapp.Application.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 using Unstapp.Shared.Interfaces;
@@ -45,7 +45,7 @@ namespace Unstapp.API.Controllers
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
                     Code = moderationResult.Code,
-                    Message = moderationResult.Message
+                    Message = moderationResult.Message ?? "Tu comentario contiene lenguaje que infringe las normas de la comunidad."
                 });
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

@@ -3,6 +3,7 @@ using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.DTOs.WhatsApp;
 using Unstapp.Infrastructure.Entities.Enums;
 using Unstapp.Infrastructure.Interfaces;
+using Unstapp.Shared.Helpers;
 
 namespace Unstapp.Infrastructure.Repositories
 {
@@ -15,22 +16,18 @@ namespace Unstapp.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<ImportantPostWhatsAppDto?> GetImportantAdministrationPostAsync(int postId)
+        public async Task<ImportantPostWhatsAppDto?> GetImportantPostAsync(int postId)
         {
             var post = await _context.Posts
                 .AsNoTracking()
+                .Include(p => p.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
                 .Where(p =>
                     p.PostId == postId &&
-                    p.Category == PostCategory.Administrativo &&
                     p.IsImportant &&
-                    p.User.UserRoles.Any(ur => ur.Role.Name == "Administracion")
+                    !p.IsDeleted
                 )
-                .Select(p => new
-                {
-                    p.PostId,
-                    Content = p.Content ?? "Nuevo aviso importante",
-                    p.PostDate
-                })
                 .FirstOrDefaultAsync();
 
             if (post == null)
@@ -55,13 +52,24 @@ namespace Unstapp.Infrastructure.Repositories
                     .ToListAsync();
             }
 
+            var roleNames = post.User.UserRoles
+                .Select(ur => ur.Role.Name)
+                .ToList();
+
+            var senderName = BuildSenderName(
+                post.User.Name,
+                post.User.LastName,
+                roleNames
+            );
+
             return new ImportantPostWhatsAppDto
             {
                 PostId = post.PostId,
-                Content = post.Content,
+                Content = post.Content ?? "Nuevo aviso importante",
                 PostDate = post.PostDate,
                 CareerIds = careerIds,
-                CareerNames = careerNames
+                CareerNames = careerNames,
+                SenderName = senderName
             };
         }
 
@@ -110,6 +118,21 @@ namespace Unstapp.Infrastructure.Repositories
                     PhoneNumber = u.PhoneNumber!
                 })
                 .ToListAsync();
+        }
+
+        private static string BuildSenderName(string? name, string? lastName, List<string> roles)
+        {
+            var fullName = $"{name} {lastName}".Trim();
+
+            if (string.IsNullOrWhiteSpace(fullName))
+                fullName = "Unstapp";
+
+            var isProffesor = RoleHelper.IsProffesor(roles);
+
+            if (isProffesor)
+                return $"Prof. {fullName}";
+
+            return fullName;
         }
     }
 }

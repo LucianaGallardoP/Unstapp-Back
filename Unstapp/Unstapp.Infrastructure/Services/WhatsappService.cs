@@ -84,6 +84,7 @@ namespace Unstapp.Infrastructure.Services
                             {
                                 new { type = "text", text = dto.StudentName },
                                 new { type = "text", text = dto.PostTitle },
+                                new { type = "text", text = dto.SenderName },
                                 new { type = "text", text = dto.Subject },
                                 new { type = "text", text = dto.DateText }
                         }

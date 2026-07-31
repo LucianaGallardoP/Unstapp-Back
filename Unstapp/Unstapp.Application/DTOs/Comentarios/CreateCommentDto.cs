@@ -1,7 +1,7 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
 
-namespace Unstapp.Application.DTOs
+namespace Unstapp.Application.DTOs.Comentarios
 {
     public class CreateCommentDto
     {

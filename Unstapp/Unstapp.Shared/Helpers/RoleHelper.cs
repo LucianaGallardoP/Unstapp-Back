@@ -10,5 +10,13 @@
                 role.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
                 role.Equals("Administrativo", StringComparison.OrdinalIgnoreCase));
         }
+
+
+        public static bool IsProffesor(List<string> roles)
+        {
+            return roles.Any(role =>
+                role.Equals("Docente", StringComparison.OrdinalIgnoreCase) ||
+                role.Equals("Profesor", StringComparison.OrdinalIgnoreCase));
+        }
     }
 }

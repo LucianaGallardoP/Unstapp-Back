@@ -1,4 +1,4 @@
-﻿using Unstapp.Application.DTOs;
+﻿using Unstapp.Application.DTOs.Comentarios;
 using Unstapp.Shared.DTOs.Common;
 
 namespace Unstapp.Application.Interfaces
