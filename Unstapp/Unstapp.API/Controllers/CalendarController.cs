@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Calendar;
 using Unstapp.Application.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 
@@ -13,10 +14,14 @@ namespace Unstapp.API.Controllers
     public class CalendarController : ControllerBase
     {
         private readonly ICalendarService _calendarService;
+        private readonly ICalendarEventReminderService _calendarEventReminderService;
 
-        public CalendarController(ICalendarService calendarService)
+        public CalendarController(
+            ICalendarService calendarService,
+            ICalendarEventReminderService calendarEventReminderService)
         {
             _calendarService = calendarService;
+            _calendarEventReminderService = calendarEventReminderService;
         }
 
         [HttpGet("events")]
@@ -24,7 +29,19 @@ namespace Unstapp.API.Controllers
             [FromQuery] DateTime start,
             [FromQuery] DateTime end)
         {
-            var result = await _calendarService.GetEventsByRangeAsync(start, end);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
+            }
+
+            var result = await _calendarService.GetEventsByRangeAsync(start, end, currentUserId);
 
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
@@ -58,7 +75,19 @@ namespace Unstapp.API.Controllers
         [HttpGet("daily")]
         public async Task<IActionResult> GetTodayEvents()
         {
-            var result = await _calendarService.GetTodayEventsAsync();
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
+            }
+
+            var result = await _calendarService.GetTodayEventsAsync(currentUserId);
 
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
@@ -69,7 +98,19 @@ namespace Unstapp.API.Controllers
         [HttpGet("events/day")]
         public async Task<IActionResult> GetEventsByDay([FromQuery] DateTime date)
         {
-            var result = await _calendarService.GetEventsByDayAsync(date);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Token inválido."
+                });
+            }
+
+            var result = await _calendarService.GetEventsByDayAsync(date, currentUserId);
 
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
@@ -87,6 +128,35 @@ namespace Unstapp.API.Controllers
                 return StatusCode(result.Error!.StatusCode, result.Error);
 
             return NoContent();
+        }
+
+        [HttpPatch("events/{eventId:int}/reminder")]
+        public async Task<IActionResult> UpdateEventReminder(int eventId, [FromBody] UpdateCalendarEventReminderDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if(!int.TryParse(userIdClaim, out var currentUserId))
+                return Unauthorized(new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status401Unauthorized,
+                    Code = "INVALID_TOKEN",
+                    Message = "Tóken inválido."
+                });
+
+            var result = await _calendarEventReminderService.UpdateReminderAsync(
+                currentUserId,
+                eventId,
+                dto.Enabled
+            );
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(new
+            {
+                eventId,
+                reminderEnabled = result.Data
+            });
         }
     }
 }

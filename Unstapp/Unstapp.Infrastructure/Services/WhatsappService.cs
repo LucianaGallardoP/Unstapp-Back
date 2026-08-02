@@ -10,6 +10,8 @@ using Unstapp.Shared.Interfaces;
 using System.Net.Http.Headers;
 
 using System.Net.Http.Json;
+using Unstapp.Shared.DTOs.WhatsApp;
+using Microsoft.AspNetCore.Http;
 
 namespace Unstapp.Infrastructure.Services
 {
@@ -82,11 +84,11 @@ namespace Unstapp.Infrastructure.Services
                             type = "body",
                             parameters = new object[]
                             {
-                                new { type = "text", text = dto.StudentName },
-                                new { type = "text", text = dto.PostTitle },
-                                new { type = "text", text = dto.SenderName },
-                                new { type = "text", text = dto.Subject },
-                                new { type = "text", text = dto.DateText }
+                                new { type = "text", text = SanitizeTemplateText(dto.StudentName) },
+                                new { type = "text", text = SanitizeTemplateText(dto.PostTitle) },
+                                new { type = "text", text = SanitizeTemplateText(dto.SenderName) },
+                                new { type = "text", text = SanitizeTemplateText(dto.Subject) },
+                                new { type = "text", text = SanitizeTemplateText(dto.DateText) }
                         }
                     }
                 }
@@ -119,6 +121,81 @@ namespace Unstapp.Infrastructure.Services
             );
         }
 
+        public async Task<bool> SendCalendarEventReminderTemplateAsync(CalendarEventReminderWhatsAppDto dto)
+        {
+            var enabled = _config.GetValue<bool>("WhatsApp:Enabled");
+
+            if (!enabled)
+                return false;
+
+            var phoneNumberId = _config["WhatsApp:PhoneNumberId"];
+            var accessToken = _config["WhatsApp:AccessToken"];
+            var apiVersion = _config["WhatsApp:ApiVersion"] ?? "v25.0";
+
+            var templateName = _config["WhatsApp:CalendarEventReminderTemplateName"]
+                ?? "unstapp_recordatorio_evento";
+
+            var languageCode = _config["WhatsApp:LanguageCode"] ?? "es_AR";
+
+            if (string.IsNullOrWhiteSpace(phoneNumberId) || string.IsNullOrWhiteSpace(accessToken))
+            {
+                _logger.LogError("No se pudo enviar WhatsApp: falta PhoneNumberId o AccessToken.");
+
+                return false;
+            }
+
+            var url = $"https://graph.facebook.com/{apiVersion}/{phoneNumberId}/messages";
+
+            var body = new
+            {
+                messaging_product = "whatsapp",
+                to = NormalizePhoneNumber(dto.ToPhoneNumber),
+                type = "template",
+                template = new
+                {
+                    name = templateName,
+                    language = new
+                    {
+                        code = languageCode
+                    },
+                    components = new[]
+                    {
+                        new
+                        {
+                            type = "body",
+                            parameters = new object[]
+                            {
+                                new { type = "text", text = SanitizeTemplateText(dto.StudentName) },
+                                new { type = "text", text = SanitizeTemplateText(dto.EventTitle) },
+                                new { type = "text", text = SanitizeTemplateText(dto.EventType) },
+                                new { type = "text", text = SanitizeTemplateText(dto.EventDate) },
+                                new { type = "text", text = SanitizeTemplateText(dto.EventTime) },
+                                new { type = "text", text = SanitizeTemplateText(dto.Description) }
+                            }
+                        }
+                    }
+                }
+            };
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            request.Content = JsonContent.Create(body);
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+
+                _logger.LogError("Error enviando recordatorio de evento por WhatsApp. Status: {Status}. Error: {Error}", response.StatusCode, error);
+
+                return false;
+            }
+
+            return true;
+        }
         private static string NormalizePhoneNumber(string phone)
         {
             if(string.IsNullOrWhiteSpace(phone))
@@ -133,6 +210,14 @@ namespace Unstapp.Infrastructure.Services
                 .Trim();
 
             return cleaned;
+        }
+
+        private static string SanitizeTemplateText(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "-";
+
+            return value.Trim();
         }
     }
 }

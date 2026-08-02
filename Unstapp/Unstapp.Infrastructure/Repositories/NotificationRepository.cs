@@ -30,6 +30,7 @@ namespace Unstapp.Infrastructure.Repositories
             return await _context.Notifications
                 .AsNoTracking()
                 .Include(n => n.ActorUser)
+                .Include(n => n.CalendarEvent)
                 .Where(n => n.RecipientUserId == userId && !n.IsDeleted)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();

@@ -24,6 +24,10 @@ namespace Unstapp.Infrastructure.Entities
         public int? PostId { get; set; }
         public Post? Post { get; set; } = null!;
 
+        public int? CalendarEventId { get; set; }
+        public CalendarEvent? CalendarEvent { get; set; }
+        public string? Message { get; set; }
+
         public bool IsPriority { get; set; } = false;
 
         public bool IsRead { get; set; } = false;

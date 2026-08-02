@@ -27,6 +27,7 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
         public DbSet<FirstLoginToken> FirstLoginTokens => Set<FirstLoginToken>();
         public DbSet<Schedule> Schedules => Set<Schedule>();
+        public DbSet<CalendarEventReminder> CalendarEventReminders => Set<CalendarEventReminder>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -190,6 +191,9 @@ namespace Unstapp.Infrastructure.Data
                 entity.Property(n => n.IsDeleted)
                     .HasDefaultValue(false);
 
+                entity.Property(n => n.Message)
+                    .HasMaxLength(500);
+
                 entity.Property(n => n.CreatedAt)
                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
@@ -207,6 +211,11 @@ namespace Unstapp.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(n => n.PostId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(n => n.CalendarEvent)
+                    .WithMany()
+                    .HasForeignKey(n => n.CalendarEventId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<UserFollow>(entity =>
@@ -255,7 +264,7 @@ namespace Unstapp.Infrastructure.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
             modelBuilder.Entity<Schedule>(entity =>
-             {
+            {
                  entity.HasKey(s => s.Id);
                  entity.Property(s => s.Day).IsRequired().HasMaxLength(15);
                  entity.Property(s => s.Subject).IsRequired().HasMaxLength(100);
@@ -270,7 +279,24 @@ namespace Unstapp.Infrastructure.Data
                      .WithMany(c => c.Schedules)
                      .HasForeignKey(s => s.CareerId)
                      .OnDelete(DeleteBehavior.Cascade);
-             });
+            });
+            modelBuilder.Entity<CalendarEventReminder>(entity =>
+            {
+                entity.HasKey(e => e.CalendarEventReminderId);
+                entity.HasIndex(e => new { e.CalendarEventId, e.UserId }).IsUnique();
+                entity.Property(e => e.IsEnabled).IsRequired().HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).IsRequired();
+
+                entity.HasOne(e => e.CalendarEvent)
+                    .WithMany()
+                    .HasForeignKey(e => e.CalendarEventId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
 
 

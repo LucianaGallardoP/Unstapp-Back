@@ -16,6 +16,8 @@ using Unstapp.Shared.Interfaces;
 using Unstapp.API.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Unstapp.API.Services;
+using Unstapp.Infrastructure.Entities;
+using Unstapp.API.Services.BackgroundServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -108,6 +110,7 @@ var cloudinaryAccount = new Account(
 
 var cloudinary = new Cloudinary(cloudinaryAccount);
 
+builder.Services.AddHostedService<CalendarEventReminderBackgroundService>();
 builder.Services.AddHttpClient<IModerationService, GeminiModerationService>();
 builder.Services.AddHttpClient<IWhatsAppService, WhatsappService>();
 builder.Services.AddSingleton(cloudinary);
@@ -140,6 +143,8 @@ builder.Services.AddScoped<ICareerRepository, CareerRepository>();
 builder.Services.AddScoped<ICareerAdminService, CareerAdminService>();
 builder.Services.AddScoped<IWhatsAppNotificationRepository, WhatsAppNotificationRepository>();
 builder.Services.AddScoped<IWhatsAppNotificationService, WhatsappNotificationService>();
+builder.Services.AddScoped<ICalendarEventReminderRepository, CalendarEventReminderRepository>();
+builder.Services.AddScoped<ICalendarEventReminderService, CalendarEventReminderService>();
 
 var port = Environment.GetEnvironmentVariable("PORT");
 if(!string.IsNullOrWhiteSpace(port))

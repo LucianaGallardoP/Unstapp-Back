@@ -10,6 +10,7 @@ namespace Unstapp.Infrastructure.Entities.Enums
     {
         Like = 1,
         Comment = 2,
-        Follow = 3
+        Follow = 3,
+        CalendarEventReminder = 4
     }
 }

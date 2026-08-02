@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Unstapp.Infrastructure.Entities.Enums;
+﻿using Unstapp.Infrastructure.Entities.Enums;
 
 namespace Unstapp.Infrastructure.Entities
 {

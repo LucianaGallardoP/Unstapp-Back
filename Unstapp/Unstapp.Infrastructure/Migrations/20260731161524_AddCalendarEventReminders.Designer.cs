@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unstapp.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Unstapp.Infrastructure.Data;
 namespace Unstapp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260731161524_AddCalendarEventReminders")]
+    partial class AddCalendarEventReminders
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,6 +99,8 @@ namespace Unstapp.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.HasKey("CalendarEventReminderId");
+
+                    b.HasIndex("CalendarEventReminderId");
 
                     b.HasIndex("UserId");
 
@@ -257,9 +262,6 @@ namespace Unstapp.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("CalendarEventId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -280,10 +282,6 @@ namespace Unstapp.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<string>("Message")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<int?>("PostId")
                         .HasColumnType("integer");
 
@@ -293,8 +291,6 @@ namespace Unstapp.Infrastructure.Migrations
                     b.HasKey("NotificationId");
 
                     b.HasIndex("ActorUserId");
-
-                    b.HasIndex("CalendarEventId");
 
                     b.HasIndex("PostId");
 
@@ -637,11 +633,6 @@ namespace Unstapp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Unstapp.Infrastructure.Entities.CalendarEvent", "CalendarEvent")
-                        .WithMany()
-                        .HasForeignKey("CalendarEventId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Unstapp.Infrastructure.Entities.Post", "Post")
                         .WithMany()
                         .HasForeignKey("PostId")
@@ -654,8 +645,6 @@ namespace Unstapp.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("ActorUser");
-
-                    b.Navigation("CalendarEvent");
 
                     b.Navigation("Post");
 

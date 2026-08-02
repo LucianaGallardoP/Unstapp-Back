@@ -6,6 +6,7 @@ using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Entities.Enums;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Helpers;
 
 namespace Unstapp.Application.Services
 {
@@ -14,20 +15,24 @@ namespace Unstapp.Application.Services
         private readonly ICalendarEventRepository _calendarEventRepository;
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
+        private readonly ICalendarEventReminderRepository _calendarEventReminderRepository;
 
         public CalendarService(
             ICalendarEventRepository calendarEventRepository,
             IUserRepository userRepository,
-            IMapper mapper)
+            IMapper mapper,
+            ICalendarEventReminderRepository calendarEventReminderRepository)
         {
             _calendarEventRepository = calendarEventRepository;
             _userRepository = userRepository;
             _mapper = mapper;
+            _calendarEventReminderRepository = calendarEventReminderRepository;
         }
 
         public async Task<ServiceResult<CalendarEventsResponseDto>> GetEventsByRangeAsync(
             DateTime start,
-            DateTime end)
+            DateTime end,
+            int currentUserId)
         {
             if (start > end)
                 return ServiceResult<CalendarEventsResponseDto>.Fail(
@@ -39,11 +44,22 @@ namespace Unstapp.Application.Services
             var startDateArgentina = start.Date;
             var endExclusiveArgentina = end.Date.AddDays(1);
 
-            var startUtc = ConvertArgentinaLocalToUtc(startDateArgentina);
-            var endUtc = ConvertArgentinaLocalToUtc(endExclusiveArgentina);
+            var startUtc = DateHelper.ConvertArgentinaLocalToUtc(startDateArgentina);
+            var endUtc = DateHelper.ConvertArgentinaLocalToUtc(endExclusiveArgentina);
 
             var events = await _calendarEventRepository.GetEventsByRangeAsync(startUtc, endUtc);
-            var eventsDto = events.Select(MapToCalendarEventDto).ToList();
+
+            var eventIds = events.Select(e => e.CalendarEventId).ToList();
+            var enabledReminderEventIds = await _calendarEventReminderRepository.GetEnabledReminderEventIdsAsync(currentUserId, eventIds);
+            
+            var enabledReminderEventIdsSet = enabledReminderEventIds.ToHashSet();
+
+            var eventsDto = _mapper.Map<List<CalendarEventDto>>(events);
+
+            foreach(var eventDto in eventsDto)
+            {
+                eventDto.ReminderEnabledForCurrentUser = enabledReminderEventIdsSet.Contains(eventDto.CalendarEventId);
+            }
 
             var response = new CalendarEventsResponseDto
             {
@@ -59,7 +75,7 @@ namespace Unstapp.Application.Services
                 EventDays = events
                     .Select(e =>
                     {
-                        var argentinaTimeZone = GetArgentinaTimeZone();
+                        var argentinaTimeZone = DateHelper.GetArgentinaTimeZone();
                         var argentinaDate = TimeZoneInfo.ConvertTimeFromUtc(e.StartDate, argentinaTimeZone);
                         return DateOnly.FromDateTime(argentinaDate);
                     })
@@ -98,8 +114,8 @@ namespace Unstapp.Application.Services
                     "La fecha de inicio no puede ser mayor a la fecha de fin."
                 );
 
-            var startUtc = ConvertArgentinaLocalToUtc(dto.StartDate);
-            var endUtc = ConvertArgentinaLocalToUtc(dto.EndDate);
+            var startUtc = DateHelper.ConvertArgentinaLocalToUtc(dto.StartDate);
+            var endUtc = DateHelper.ConvertArgentinaLocalToUtc(dto.EndDate);
 
             var calendarEvent = new CalendarEvent
             {
@@ -115,17 +131,18 @@ namespace Unstapp.Application.Services
             await _calendarEventRepository.AddAsync(calendarEvent);
 
             var responseDto = _mapper.Map<CalendarEventDto>(calendarEvent);
+            responseDto.ReminderEnabledForCurrentUser = false;
 
             return ServiceResult<CalendarEventDto>.Ok(responseDto);
         }
 
-        public async Task<ServiceResult<List<CalendarEventDto>>> GetTodayEventsAsync()
+        public async Task<ServiceResult<List<CalendarEventDto>>> GetTodayEventsAsync(int currentUserId)
         {
-            var argentinaNow = GetArgentinaNow();
+            var argentinaNow = DateHelper.GetArgentinaNow();
 
             var todayArgentina = argentinaNow.Date;
 
-            var result = await GetEventsByRangeAsync(todayArgentina, todayArgentina);
+            var result = await GetEventsByRangeAsync(todayArgentina, todayArgentina, currentUserId);
 
             if (!result.Success)
                 return ServiceResult<List<CalendarEventDto>>.Fail(
@@ -137,11 +154,11 @@ namespace Unstapp.Application.Services
             return ServiceResult<List<CalendarEventDto>>.Ok(result.Data!.Events);
         }
 
-        public async Task<ServiceResult<List<CalendarEventDto>>> GetEventsByDayAsync(DateTime date)
+        public async Task<ServiceResult<List<CalendarEventDto>>> GetEventsByDayAsync(DateTime date, int currentUserId)
         {
             var dayArgentina = date.Date;
 
-            var result = await GetEventsByRangeAsync(dayArgentina, dayArgentina);
+            var result = await GetEventsByRangeAsync(dayArgentina, dayArgentina, currentUserId);
 
             if (!result.Success)
                 return ServiceResult<List<CalendarEventDto>>.Fail(
@@ -178,95 +195,13 @@ namespace Unstapp.Application.Services
 
         private static bool CanCreateCalendarEvent(List<string> roles, CalendarEventType eventType)
         {
-            if (HasAdministrativeRoles(roles))
+            if (RoleHelper.IsAdmin(roles))
                 return true;
 
-            if (HasTeacherRoles(roles))
-            {
-                return eventType == CalendarEventType.Clase ||
-                    eventType == CalendarEventType.Examen;
-            }
+            if (RoleHelper.IsProffesor(roles))
+                return eventType == CalendarEventType.Clase;
+
             return false;
-        }
-
-        private static bool HasAdministrativeRoles(List<string> roles)
-        {
-            var administrativeRoles = new[]
-            {
-                "Admin",
-                "Administrador",
-                "Administracion",
-                "Administrativo"
-            };
-
-            return roles.Any(role =>
-                administrativeRoles.Any(allowed =>
-                    allowed.Equals(role, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        private static bool HasTeacherRoles(List<string> roles)
-        {
-            var teacherRoles = new[]
-            {
-                "Docente",
-                "Profesor"
-            };
-            return roles.Any(role =>
-                teacherRoles.Any(allowed =>
-                    allowed.Equals(role, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        private static TimeZoneInfo GetArgentinaTimeZone()
-        {
-            try
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires");
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById("Argentina Standard Time");
-            }
-        }
-
-        private static DateTime ConvertArgentinaLocalToUtc(DateTime argentinaLocalDateTime)
-        {
-            var argentinaTimeZone = GetArgentinaTimeZone();
-            var unespecifiedTime = DateTime.SpecifyKind(argentinaLocalDateTime, DateTimeKind.Unspecified);
-
-            return TimeZoneInfo.ConvertTimeToUtc(unespecifiedTime, argentinaTimeZone);
-        }
-
-        private static DateTime GetArgentinaNow()
-        {
-            var argentinaTimeZone = GetArgentinaTimeZone();
-
-            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, argentinaTimeZone);
-        }
-
-        private static CalendarEventDto MapToCalendarEventDto(CalendarEvent calendarEvent)
-        {
-            var argentinaTimeZone = GetArgentinaTimeZone();
-
-            var startArgentina = TimeZoneInfo.ConvertTimeFromUtc(
-                calendarEvent.StartDate,
-                argentinaTimeZone
-            );
-
-            var endArgentina = TimeZoneInfo.ConvertTimeFromUtc(
-                calendarEvent.EndDate,
-                argentinaTimeZone
-            );
-
-            return new CalendarEventDto
-            {
-                CalendarEventId = calendarEvent.CalendarEventId,
-                Title = calendarEvent.Title,
-                Description = calendarEvent.Description,
-                Type = calendarEvent.Type.ToString(),
-                Day = startArgentina.ToString("yyyy-MM-dd"),
-                StartTime = startArgentina.ToString("HH:mm"),
-                EndTime = endArgentina.ToString("HH:mm")
-            };
         }
     }
 }

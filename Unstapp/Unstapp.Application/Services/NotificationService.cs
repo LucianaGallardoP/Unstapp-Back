@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Entities.Enums;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Helpers;
 
 
 namespace Unstapp.Application.Services
@@ -15,17 +18,23 @@ namespace Unstapp.Application.Services
         private readonly IPostRepository _postRepository;
         private readonly IUserRepository _userRepository;
         private readonly INotificationRealtimeSender _notificationRealtimeSender;
+        private readonly IMapper _mapper;
+        private readonly IConfiguration _configuration;
 
         public NotificationService(
             INotificationRepository notificationRepository,
             IPostRepository postRepository,
             IUserRepository userRepository,
-            INotificationRealtimeSender notificationRealtimeSender)
+            INotificationRealtimeSender notificationRealtimeSender,
+            IMapper mapper,
+            IConfiguration configuration)
         {
             _notificationRepository = notificationRepository;
             _postRepository = postRepository;
             _userRepository = userRepository;
             _notificationRealtimeSender = notificationRealtimeSender;
+            _mapper = mapper;
+            _configuration = configuration;
         }
 
         public async Task CreateLikeNotificationAsync(int actorUserId, int postId)
@@ -55,25 +64,55 @@ namespace Unstapp.Application.Services
 
             await _notificationRepository.AddAsync(notification);
         }
+        public async Task CreateCalendarEventReminderNotificationAsync(
+            int recipientUserId,
+            int calendarEventId,
+            string eventTitle,
+            DateTime eventStartDate)
+        {
+
+            if(recipientUserId <= 0 || calendarEventId <= 0)
+                return;
+
+            var systemActorUserId = GetSystemActorUserId();
+
+            var systemUser = await _userRepository.GetByIdAsync(systemActorUserId);
+
+            if(systemUser == null)
+                return;
+
+            var eventStartArgentina =DateHelper.ConvertUtcToArgentina(eventStartDate);
+
+            var message = $"Te recordamos: '{eventTitle}' el {eventStartDate:dd/MM/yyyy} a las {eventStartDate:HH:mm}.";
+
+            var notification = new Notification
+            {
+                RecipientUserId = recipientUserId,
+                ActorUserId = systemActorUserId,
+                ActorUserName = "Unstapp",
+                ActionType = NotificationActionType.CalendarEventReminder,
+                CalendarEventId = calendarEventId,
+                IsPriority = true,
+                IsRead = false,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                Message = message
+            };
+
+            await _notificationRepository.AddAsync(notification);
+
+            var notificationDto = _mapper.Map<NotificationResponseDto>(notification);
+
+            await _notificationRealtimeSender.SendNotificationAsync(recipientUserId, notificationDto);
+        }
 
         public async Task<ServiceResult<List<NotificationResponseDto>>> GetMyNotificationsAsync(int userId)
         {
             var notifications = await _notificationRepository.GetAllByUserIdAsync(userId);
 
-            var dto = notifications.Select(n => new NotificationResponseDto
-            {
-                NotificationId = n.NotificationId,
-                User = n.ActorUserName,
-                Action = GetActionText(n.ActionType),
-                ActorAvatarUrl = n.ActorUser?.AvatarUrl,
-                PostId = n.PostId,
-                IsPriority = n.IsPriority,
-                IsRead = n.IsRead,
-                CreatedAt = n.CreatedAt,
-                Message = $"{n.ActorUserName} {GetActionText(n.ActionType)}"
-            }).ToList();
+            var dtos = _mapper.Map<List<NotificationResponseDto>>(notifications);
 
-            return ServiceResult<List<NotificationResponseDto>>.Ok(dto);
+            return ServiceResult<List<NotificationResponseDto>>.Ok(dtos);
         }
 
         public async Task<ServiceResult<bool>> MarkAsReadAsync(int userId, int notificationId)
@@ -164,17 +203,8 @@ namespace Unstapp.Application.Services
 
             await _notificationRepository.AddAsync(notification);
 
-            var notificationDto = new NotificationResponseDto
-            {
-                NotificationId = notification.NotificationId,
-                User = notification.ActorUserName,
-                Action = GetActionText(notification.ActionType),
-                ActorAvatarUrl = notification.ActorUser.AvatarUrl,
-                IsPriority = notification.IsPriority,
-                IsRead = notification.IsRead,
-                CreatedAt = notification.CreatedAt,
-                Message = $"{notification.ActorUserName} {GetActionText(notification.ActionType)}"
-            };
+            var notificationDto = _mapper.Map<NotificationResponseDto>(notification);
+            notificationDto.ActorAvatarUrl = actor.AvatarUrl;
 
             await _notificationRealtimeSender.SendNotificationAsync(followedUserId, notificationDto);
         }
@@ -216,15 +246,16 @@ namespace Unstapp.Application.Services
             return notification;
         }
 
-        private static string GetActionText(NotificationActionType actionType)
+        private int GetSystemActorUserId()
         {
-            return actionType switch
+            var value = _configuration["Notifications:SystemActorUserId"];
+
+            if(int.TryParse(value, out var systemActorUserId) && systemActorUserId > 0)
             {
-                NotificationActionType.Like => "dio me gusta a tu post",
-                NotificationActionType.Comment => "comentó en tu post",
-                NotificationActionType.Follow => "comenzó a seguirte",
-                _ => "interactuó con tu post"
-            };
+                return systemActorUserId;
+            }
+
+            return 1;
         }
     }
 }

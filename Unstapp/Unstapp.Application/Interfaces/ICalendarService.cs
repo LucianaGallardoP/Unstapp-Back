@@ -12,12 +12,13 @@ namespace Unstapp.Application.Interfaces
     {
         Task<ServiceResult<CalendarEventsResponseDto>> GetEventsByRangeAsync(
             DateTime start,
-            DateTime end);
+            DateTime end,
+            int currentUserId);
         Task<ServiceResult<CalendarEventDto>> CreateEventAsync(
             CreateCalendarEventDto dto,
             int currentUserId);
-        Task<ServiceResult<List<CalendarEventDto>>> GetTodayEventsAsync();
-        Task<ServiceResult<List<CalendarEventDto>>> GetEventsByDayAsync(DateTime date);
+        Task<ServiceResult<List<CalendarEventDto>>> GetTodayEventsAsync(int currentUserId);
+        Task<ServiceResult<List<CalendarEventDto>>> GetEventsByDayAsync(DateTime date, int currentUserId);
         Task<ServiceResult<bool>> DeleteEventAsync(int eventId);
     }
 }
