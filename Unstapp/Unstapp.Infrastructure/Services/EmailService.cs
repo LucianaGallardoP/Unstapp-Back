@@ -28,19 +28,53 @@ namespace Unstapp.Infrastructure.Services
             string fullName,
             string confirmationLink)
         {
+
+            const string subject = "Activá tu cuenta en Unstapp";
+
+            var safeFullName = WebUtility.HtmlEncode(fullName);
+            var safeConfirmationLink = WebUtility.HtmlEncode(confirmationLink);
+
+            var htmlBody =
+                $"<p>Hola {safeFullName},</p>" +
+                "<p>Para completar el nuevo inicio de sesión hacé click aquí:</p>" +
+                $"<p><a href=\"{safeConfirmationLink}\">Crear mi contraseña</a></p>" +
+                "<p>Este enlace vence en 10 minutos. Si no solicitaste el acceso, ignorá este mensaje.</p>";
+
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+
+        public async Task SendPasswordResetEmailAsync(string toEmail, string fullName, string resetLink, int expirationMinutes)
+        {
+            const string subject = "Restablecé tu contraseña en Unstapp";
+
+            var safeFullName = WebUtility.HtmlEncode(fullName);
+            var safeResetLink = WebUtility.HtmlEncode(resetLink);
+
+            var htmlBody = $"<p>Hola {safeFullName},</p>" +
+                            "<p>Recibimos una solicitud para restablecer tu contraseña en Unstapp.</p>" +
+                            "<p>Hacé click en el siguiente enlace para crear una nueva contraseña:</p>" +
+                            $"<p><a href=\"{safeResetLink}\">Restablecer mi contraseña</a></p>" +
+                            $"<p>Este enlace vence en {expirationMinutes} minutos.</p>" +
+                            "<p>Si no solicitaste este cambio, podés ignorar este mensaje.</p>";
+
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+
+        private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+        {
             var provider = _config["Email:Provider"];
 
-            if(!string.Equals(provider, "GmailApi", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(provider, "GmailApi", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogInformation(
-                    "[EmailService] Proveedor no configurado como GmailApi. Enlace para {Email}: {Link}", toEmail, confirmationLink);
+                    "[EmailService] Proveedor no configurado como GmailApi. Email para {Email}. Asunto: {Subject}", toEmail, subject);
                 return;
             }
 
             var fromAddress = _config["Email:From"];
             var fromName = _config["Email:FromName"] ?? "Unstapp";
 
-            if(string.IsNullOrWhiteSpace(fromAddress))
+            if (string.IsNullOrWhiteSpace(fromAddress))
                 throw new InvalidOperationException("La dirección de correo electrónico del remitente no está configurada en Email:From.");
 
             var clientId = _config["Email:GmailApi:ClientId"];
@@ -48,7 +82,7 @@ namespace Unstapp.Infrastructure.Services
             var refreshToken = _config["Email:GmailApi:RefreshToken"];
             var applicationName = _config["Email:GmailApi:ApplicationName"] ?? "Unstapp";
 
-            if(string.IsNullOrWhiteSpace(clientId) ||
+            if (string.IsNullOrWhiteSpace(clientId) ||
                 string.IsNullOrWhiteSpace(clientSecret) ||
                 string.IsNullOrWhiteSpace(refreshToken))
             {
@@ -65,17 +99,6 @@ namespace Unstapp.Infrastructure.Services
                 HttpClientInitializer = credential,
                 ApplicationName = applicationName
             });
-
-            const string subject = "Activá tu cuenta en Unstapp";
-
-            var safeFullName = WebUtility.HtmlEncode(fullName);
-            var safeConfirmationLink = WebUtility.HtmlEncode(confirmationLink);
-
-            var htmlBody =
-                $"<p>Hola {safeFullName},</p>" +
-                "<p>Para completar el nuevo inicio de sesión hacé click aquí:</p>" +
-                $"<p><a href=\"{safeConfirmationLink}\">Crear mi contraseña</a></p>" +
-                "<p>Este enlace vence en 10 minutos. Si no solicitaste el acceso, ignorá este mensaje.</p>";
 
             var mimeMessage = new MimeMessage();
 
@@ -102,6 +125,7 @@ namespace Unstapp.Infrastructure.Services
             _logger.LogInformation(
                 "[EmailService] Correo de primer login enviado por GmailApi a {Email}.",
                 toEmail);
+
         }
 
         private static UserCredential CreateUserCredential(

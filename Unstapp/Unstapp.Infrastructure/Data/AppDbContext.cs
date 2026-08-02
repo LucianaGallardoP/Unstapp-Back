@@ -28,7 +28,7 @@ namespace Unstapp.Infrastructure.Data
         public DbSet<FirstLoginToken> FirstLoginTokens => Set<FirstLoginToken>();
         public DbSet<Schedule> Schedules => Set<Schedule>();
         public DbSet<CalendarEventReminder> CalendarEventReminders => Set<CalendarEventReminder>();
-
+        public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -291,6 +291,19 @@ namespace Unstapp.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(e => e.CalendarEventId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<PasswordResetToken>(entity =>
+            {
+                entity.HasKey(e => e.PasswordResetTokenId);
+                entity.Property(e => e.TokenHash).IsRequired();
+                entity.Property(e => e.ExpiresAt).IsRequired();
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.HasIndex(e => e.TokenHash).IsUnique();
 
                 entity.HasOne(e => e.User)
                     .WithMany()

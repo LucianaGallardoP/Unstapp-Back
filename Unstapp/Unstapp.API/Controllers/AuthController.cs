@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Auth;
 using Unstapp.Application.Interfaces;
 
 namespace Unstapp.API.Controllers
@@ -53,6 +54,34 @@ namespace Unstapp.API.Controllers
                 return StatusCode(result.Error!.StatusCode, result.Error);
 
             return Ok(result.Data);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequestDto dto)
+        {
+            var result = await _authService.ForgotPasswordAsync(dto);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(new
+            {
+                message = "Si el DNI existe y tiene un email asociado, se enviará un enlace de recuperación."
+            });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequestDto dto)
+        {
+            var result = await _authService.ResetPasswordAsync(dto);
+
+            if (!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(new
+            {
+                message = "Contraseña actualizada correctamente."
+            });
         }
     }
 }

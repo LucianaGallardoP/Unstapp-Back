@@ -145,6 +145,7 @@ builder.Services.AddScoped<IWhatsAppNotificationRepository, WhatsAppNotification
 builder.Services.AddScoped<IWhatsAppNotificationService, WhatsappNotificationService>();
 builder.Services.AddScoped<ICalendarEventReminderRepository, CalendarEventReminderRepository>();
 builder.Services.AddScoped<ICalendarEventReminderService, CalendarEventReminderService>();
+builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 
 var port = Environment.GetEnvironmentVariable("PORT");
 if(!string.IsNullOrWhiteSpace(port))

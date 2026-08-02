@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Auth;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
@@ -22,6 +23,7 @@ namespace Unstapp.Application.Services
         private readonly IConfiguration _config;
         private readonly IFirstLoginTokenRepository _firstLoginTokenRepository;
         private readonly IEmailService _emailService;
+        private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
 
         private const int FirstLoginTokenTtlMinutes = 10;
 
@@ -31,7 +33,8 @@ namespace Unstapp.Application.Services
             IJwtService jwtService,
             IConfiguration config,
             IFirstLoginTokenRepository firstLoginTokenRepository,
-            IEmailService emailService)
+            IEmailService emailService,
+            IPasswordResetTokenRepository passwordResetTokenRepository)
         {
             _userRepository = userRepository;
             _mapper = mapper;
@@ -39,6 +42,7 @@ namespace Unstapp.Application.Services
             _config = config;
             _firstLoginTokenRepository = firstLoginTokenRepository;
             _emailService = emailService;
+            _passwordResetTokenRepository = passwordResetTokenRepository;
         }
 
         public async Task<ServiceResult<LoginResponseDto?>> LoginAsync(LoginRequestDto dto)
@@ -184,6 +188,88 @@ namespace Unstapp.Application.Services
             {
                 Message = "Tu cuenta fue activada correctamente."
             });
+        }
+
+        public async Task<ServiceResult<bool>> ForgotPasswordAsync(ForgotPasswordRequestDto dto)
+        {
+            if(string.IsNullOrWhiteSpace(dto.DNI))
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "DNI_REQUIRED",
+                    "El DNI es obligatorio."
+                );
+
+            var dni = dto.DNI.Trim();
+
+            var user = await _userRepository.GetByDniAsync(dni);
+
+            if (user == null)
+                return ServiceResult<bool>.Ok(true);
+
+            if(string.IsNullOrWhiteSpace(user.Email))
+                return ServiceResult<bool>.Ok(true);
+
+            await _passwordResetTokenRepository.InvalidateActiveTokensByUserIdAsync(user.UserId);
+
+            var rawToken = GenerateRawToken();
+            var tokenHash = HashToken(rawToken);
+
+            var expirationMinutes = _config.GetValue<int?>("PasswordReset:ExpirationMinutes") ?? 30;
+
+            var resetToken = new PasswordResetToken
+            {
+                UserId = user.UserId,
+                TokenHash = tokenHash,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes),
+                UsedAt = null
+            };
+
+            await _passwordResetTokenRepository.AddAsync(resetToken);
+
+            var frontendBaseUrl = _config["Frontend:BaseUrl"] ?? "https://unstapp-front.onrender.com";
+            var resetPasswordPath = _config["Frontend:ResetPasswordPath"] ?? "/reset-password";
+            var resetLink = $"{frontendBaseUrl.TrimEnd('/')}{resetPasswordPath}?token={rawToken}";
+            var fullName = $"{user.Name} {user.LastName}".Trim();
+
+            await _emailService.SendPasswordResetEmailAsync(user.Email, fullName, resetLink, expirationMinutes);
+
+            return ServiceResult<bool>.Ok(true);
+        }
+
+        public async Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequestDto dto)
+        {
+            if(string.IsNullOrWhiteSpace(dto.Token))
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "TOKEN_REQUIRED",
+                    "El token es obligatorio."
+                );
+
+            if(string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_PASSWORD",
+                    "La nueva contraseña debe tener al menos 6 caracteres."
+                );
+
+            var tokenHash = HashToken(dto.Token.Trim());
+            var resetToken = await _passwordResetTokenRepository.GetValidTokenAsync(tokenHash);
+
+            if(resetToken == null)
+                return ServiceResult<bool>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_OR_EXPIRED_TOKEN",
+                    "El enlace de recuperación es inválido o expiró."
+                );
+
+            var user = resetToken.User;
+            user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _userRepository.UpdateAsync(user);
+            await _passwordResetTokenRepository.MarkAsUsedAsync(resetToken);
+            await _passwordResetTokenRepository.InvalidateActiveTokensByUserIdAsync(user.UserId);
+
+            return ServiceResult<bool>.Ok(true);
         }
 
         private static string GenerateRawToken()
