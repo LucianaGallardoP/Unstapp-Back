@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Unstapp.Application.DTOs;
+using Unstapp.Application.DTOs.Calendar;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Entities.Enums;
@@ -16,17 +17,20 @@ namespace Unstapp.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly ICalendarEventReminderRepository _calendarEventReminderRepository;
+        private readonly ICareerRepository _careerRepository;
 
         public CalendarService(
             ICalendarEventRepository calendarEventRepository,
             IUserRepository userRepository,
             IMapper mapper,
-            ICalendarEventReminderRepository calendarEventReminderRepository)
+            ICalendarEventReminderRepository calendarEventReminderRepository,
+            ICareerRepository careerRepository)
         {
             _calendarEventRepository = calendarEventRepository;
             _userRepository = userRepository;
             _mapper = mapper;
             _calendarEventReminderRepository = calendarEventReminderRepository;
+            _careerRepository = careerRepository;
         }
 
         public async Task<ServiceResult<CalendarEventsResponseDto>> GetEventsByRangeAsync(
@@ -47,7 +51,20 @@ namespace Unstapp.Application.Services
             var startUtc = DateHelper.ConvertArgentinaLocalToUtc(startDateArgentina);
             var endUtc = DateHelper.ConvertArgentinaLocalToUtc(endExclusiveArgentina);
 
-            var events = await _calendarEventRepository.GetEventsByRangeAsync(startUtc, endUtc);
+            var roles = await _userRepository.GetRoleNameByUserIdAsync(currentUserId);
+
+            var includeAllCareers = RoleHelper.IsAdmin(roles);
+
+            var userCareerIds = includeAllCareers
+                ? new List<int>()
+                : await _userRepository.GetCareerIdsByUserIdAsync(currentUserId);
+
+            var events = await _calendarEventRepository.GetEventsByRangeAsync(
+                startUtc,
+                endUtc,
+                userCareerIds,
+                includeAllCareers
+            );
 
             var eventIds = events.Select(e => e.CalendarEventId).ToList();
             var enabledReminderEventIds = await _calendarEventReminderRepository.GetEnabledReminderEventIdsAsync(currentUserId, eventIds);
@@ -117,6 +134,30 @@ namespace Unstapp.Application.Services
             var startUtc = DateHelper.ConvertArgentinaLocalToUtc(dto.StartDate);
             var endUtc = DateHelper.ConvertArgentinaLocalToUtc(dto.EndDate);
 
+            var careerIds = dto.CareerIds?
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList() ?? new List<int>();
+
+            if(dto.CareerIds != null && dto.CareerIds.Any(id => id <= 0))
+                return ServiceResult<CalendarEventDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_CAREER_ID",
+                    "Los identificadores de carrera no son válidos."
+                );
+
+            foreach(var careerId in careerIds)
+            {
+                var careerExists = await _careerRepository.CareerExistsAsync(careerId);
+
+                if(!careerExists)
+                    return ServiceResult<CalendarEventDto>.Fail(
+                        StatusCodes.Status404NotFound,
+                        "CAREER_NOT_FOUND",
+                        $"La carrera con ID {careerId} no existe."
+                    );
+            }
+
             var calendarEvent = new CalendarEvent
             {
                 Title = dto.Title.Trim(),
@@ -128,7 +169,7 @@ namespace Unstapp.Application.Services
                 CreatedAt = DateTime.UtcNow,
             };
 
-            await _calendarEventRepository.AddAsync(calendarEvent);
+            await _calendarEventRepository.AddWithCareerAsync(calendarEvent, careerIds);
 
             var responseDto = _mapper.Map<CalendarEventDto>(calendarEvent);
             responseDto.ReminderEnabledForCurrentUser = false;

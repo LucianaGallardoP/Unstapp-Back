@@ -1,4 +1,4 @@
-﻿namespace Unstapp.Application.DTOs
+﻿namespace Unstapp.Application.DTOs.Calendar
 {
     public class CalendarEventDto
     {
@@ -10,5 +10,7 @@
         public string StartTime { get; set; } = string.Empty;
         public string EndTime { get; set; } = string.Empty;
         public bool ReminderEnabledForCurrentUser { get; set; }
+        public List<int> CareerIds { get; set; } = new();
+        public List<string> CareerNames { get; set; } = new();
     }
 }

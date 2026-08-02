@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Unstapp.Application.DTOs;
 using Unstapp.Application.DTOs.Calendar;
 using Unstapp.Application.Interfaces;
 using Unstapp.Shared.DTOs.Common;

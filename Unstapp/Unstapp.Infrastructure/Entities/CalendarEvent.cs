@@ -12,5 +12,6 @@ namespace Unstapp.Infrastructure.Entities
         public DateTime EndDate { get; set; }
         public bool IsDeleted { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public ICollection<CalendarEventCareer> CalendarEventCareers { get; set; } = new List<CalendarEventCareer>();
     }
 }

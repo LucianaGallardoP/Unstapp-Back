@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 using Unstapp.Infrastructure.Entities.Enums;
 
-namespace Unstapp.Application.DTOs
+namespace Unstapp.Application.DTOs.Calendar
 {
     public class CreateCalendarEventDto
     {
@@ -25,5 +20,6 @@ namespace Unstapp.Application.DTOs
 
         [Required(ErrorMessage = "La fecha y hora de fin es obligatoria.")]
         public DateTime EndDate { get; set; }
+        public List<int>? CareerIds { get; set; }
     }
 }
