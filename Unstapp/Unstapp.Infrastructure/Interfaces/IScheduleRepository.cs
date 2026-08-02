@@ -10,5 +10,6 @@ namespace Unstapp.Infrastructure.Interfaces
         Task UpdateScheduleAsync(Schedule schedule);
         Task SoftDeleteAsync(Schedule schedule);
         Task AddRangeAsync(List<Schedule> schedules);
+        Task<List<Schedule>> GetSchedulesForDuplicateValidationAsync(List<int> careerIds, List<int> years);
     }
 }

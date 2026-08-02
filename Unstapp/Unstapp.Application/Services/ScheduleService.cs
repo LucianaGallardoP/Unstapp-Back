@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using AutoMapper;
 using ExcelDataReader;
+using Google.Apis.Http;
 using Microsoft.AspNetCore.Http;
 using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Application.Interfaces;
@@ -211,6 +212,7 @@ namespace Unstapp.Application.Services
                 );
             }
 
+
             if (dto.StartTime != null)
             {
                 if (string.IsNullOrWhiteSpace(dto.StartTime))
@@ -300,7 +302,7 @@ namespace Unstapp.Application.Services
                 .GroupBy(c => NormalizeText(c.Name))
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            var schedules = new List<Schedule>();
+            var candidates = new List<ScheduleImportCandidate>();
 
             await using var stream = file.OpenReadStream();
 
@@ -401,7 +403,18 @@ namespace Unstapp.Application.Services
                             $"Fila {rowNumber}: La duración debe ser un número mayor a cero."
                         );
 
-                    schedules.Add(new Schedule
+                    var endTime = startTime.Add(TimeSpan.FromHours((double)durationHours));
+
+                    if(endTime > TimeSpan.FromDays(1))
+                    {
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "INVALID_TIME_RANGE",
+                            $"Fila {rowNumber}: el horario supera el límite del día."
+                        );
+                    }
+
+                    var schedule = new Schedule
                     {
                         CareerId = career.CareerId,
                         Year = year,
@@ -412,6 +425,12 @@ namespace Unstapp.Application.Services
                         Professor = string.IsNullOrWhiteSpace(professor) ? string.Empty : professor.Trim(),
                         Classroom = string.IsNullOrWhiteSpace(classroom) ? string.Empty : classroom.Trim(),
                         IsDeleted = false
+                    };
+
+                    candidates.Add(new ScheduleImportCandidate
+                    {
+                        RowNumber = rowNumber,
+                        Schedule = schedule
                     });
                 }
             }
@@ -424,12 +443,24 @@ namespace Unstapp.Application.Services
                 );
             }
 
-            if (schedules.Count == 0)
+            if (candidates.Count == 0)
                 return ServiceResult<ScheduleImportResponseDto>.Fail(
                     StatusCodes.Status400BadRequest,
                     "NO_VALID_ROWS",
                     "No se encontraron filas válidas para importar."
                 );
+
+            var duplicateInFileResult = ValidateDuplicatesInsideExcel(candidates);
+
+            if(duplicateInFileResult != null)
+                return duplicateInFileResult;
+
+            var duplicateInDatabaseResult = await ValidateDuplicatesAgainstDatabaseAsync(candidates);
+
+            if(duplicateInDatabaseResult != null)
+                return duplicateInDatabaseResult;
+
+            var schedules = candidates.Select(c => c.Schedule).ToList();
 
             await _scheduleRepository.AddRangeAsync(schedules);
 
@@ -659,6 +690,92 @@ namespace Unstapp.Application.Services
         private static bool IsEmptyExcelValue(object? value)
         {
             return value == null || string.IsNullOrWhiteSpace(value.ToString());
+        }
+
+        private class ScheduleImportCandidate
+        {
+            public int RowNumber { get; set; }
+            public Schedule Schedule { get; set; } = null!;
+        }
+
+        private static ServiceResult<ScheduleImportResponseDto>? ValidateDuplicatesInsideExcel(List<ScheduleImportCandidate> candidates)
+        {
+            for (var i = 0; i < candidates.Count; i++)
+            {
+                for(var j = i + 1; j < candidates.Count; j++)
+                {
+                    var first = candidates[i];
+                    var second = candidates[j];
+
+                    if(AreSameScheduleGroup(first.Schedule, second.Schedule) &&
+                        DoSchedulesOverlap(first.Schedule, second.Schedule))
+                    {
+                        return ServiceResult<ScheduleImportResponseDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "DUPLICATE_SCHEDULE_IN_FILE",
+                            $"Las filas {first.RowNumber} y {second.RowNumber} se superponen para la misma carrera, año y día."
+                        );
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private async Task<ServiceResult<ScheduleImportResponseDto>?> ValidateDuplicatesAgainstDatabaseAsync(List<ScheduleImportCandidate> candidates)
+        {
+            var careerIds = candidates
+                .Select(c => c.Schedule.CareerId)
+                .Distinct()
+                .ToList();
+
+            var years = candidates
+                .Select(c => c.Schedule.Year)
+                .Distinct()
+                .ToList();
+
+            var existingSchedules = await _scheduleRepository.GetSchedulesForDuplicateValidationAsync(careerIds, years);
+
+            foreach(var candidate in candidates)
+            {
+                var conflict = existingSchedules.FirstOrDefault(existing =>
+                    AreSameScheduleGroup(candidate.Schedule, existing) &&
+                    DoSchedulesOverlap(candidate.Schedule, existing)
+                );
+
+                if(conflict != null)
+                    return ServiceResult<ScheduleImportResponseDto>.Fail(
+                        StatusCodes.Status400BadRequest,
+                        "DUPLICATE_SCHEDULE_IN_DATABASE",
+                        $"Fila {candidate.RowNumber}: el horario se superpone con un horario ya cargado en la base de datos."
+                    );
+            }
+
+            return null;
+        }
+
+        private static bool AreSameScheduleGroup(Schedule first, Schedule second)
+        {
+            return first.CareerId == second.CareerId &&
+                first.Year == second.Year &&
+                NormalizeText(first.Day) == NormalizeText(second.Day);
+        }
+
+        private static bool DoSchedulesOverlap(Schedule first, Schedule second)
+        {
+            var firstStart = first.StartTime;
+            var firstEnd = GetScheduleEndTime(first);
+
+            var secondStart = second.StartTime;
+            var secondEnd = GetScheduleEndTime(second);
+
+            return firstStart < secondEnd &&
+                secondStart < firstEnd;
+        }
+
+        private static TimeSpan GetScheduleEndTime(Schedule schedule)
+        {
+            return schedule.StartTime.Add(TimeSpan.FromHours((double)schedule.DurationHours));
         }
     }
 }

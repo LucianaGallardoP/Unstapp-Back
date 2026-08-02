@@ -67,5 +67,18 @@ namespace Unstapp.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<List<Schedule>> GetSchedulesForDuplicateValidationAsync(
+            List<int> careerIds,
+            List<int> years)
+        {
+            return await _context.Schedules
+                .AsNoTracking()
+                .Where(s =>
+                    careerIds.Contains(s.CareerId) &&
+                    years.Contains(s.Year) &&
+                    !s.IsDeleted)
+                .ToListAsync();
+        }
     }
 }
