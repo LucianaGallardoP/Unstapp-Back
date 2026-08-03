@@ -7,6 +7,7 @@ using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Common;
 using Unstapp.Shared.Interfaces;
 using Unstapp.Shared.Helpers;
+using Microsoft.Extensions.Configuration;
 
 namespace Unstapp.Application.Services
 {
@@ -18,19 +19,22 @@ namespace Unstapp.Application.Services
         private readonly INotificationService _notificationService;
         private readonly IWhatsAppService _whatsAppService;
         private readonly ILogger<CalendarEventReminderService> _logger;
+        private readonly IConfiguration _config;
 
         public CalendarEventReminderService(
             ICalendarEventRepository calendarEventRepository,
             ICalendarEventReminderRepository calendarEventReminderRepository,
             INotificationService notificationService,
             IWhatsAppService whatsAppService,
-            ILogger<CalendarEventReminderService> logger)
+            ILogger<CalendarEventReminderService> logger,
+            IConfiguration config)
         {
             _calendarEventRepository = calendarEventRepository;
             _calendarEventReminderRepository = calendarEventReminderRepository;
             _notificationService = notificationService;
             _whatsAppService = whatsAppService;
             _logger = logger;
+            _config = config;
         }
         
         public async Task<ServiceResult<bool>> UpdateReminderAsync(
@@ -99,15 +103,17 @@ namespace Unstapp.Application.Services
         {
             var todayArgentina = DateHelper.GetArgentinaToday();
 
-            var targetEventDate = todayArgentina.AddDays(2);
+            var reminderWindowDays = _config.GetValue<int?>("CalendarReminders:WindowDays") ?? 2;
+
+            var maxEventDate = todayArgentina.AddDays(reminderWindowDays);
 
             _logger.LogInformation(
-                "Procesando recordatorios para eventos del día {TargetEventDate}.",
-                targetEventDate
+                "Procesando recordatorios para eventos del día {maxEventDate}.",
+                maxEventDate
             );
 
             var reminders = await _calendarEventReminderRepository
-                .GetDueRemindersAsync(targetEventDate);
+                .GetDueRemindersAsync(maxEventDate);
 
             _logger.LogInformation(
                 "Recordatorios encontrados: {ReminderCount}.",

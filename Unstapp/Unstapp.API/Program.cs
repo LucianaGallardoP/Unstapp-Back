@@ -1,6 +1,13 @@
-using Microsoft.EntityFrameworkCore;
+using System.Text;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Unstapp.API.Hubs;
+using Unstapp.API.Services;
+using Unstapp.API.Services.BackgroundServices;
 using Unstapp.Application.Interfaces;
 using Unstapp.Application.Mappings;
 using Unstapp.Application.Seeding;
@@ -8,16 +15,8 @@ using Unstapp.Application.Services;
 using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Infrastructure.Repositories;
-using System.Text;
-using Microsoft.OpenApi.Models;
-using CloudinaryDotNet;
 using Unstapp.Infrastructure.Services;
 using Unstapp.Shared.Interfaces;
-using Unstapp.API.Hubs;
-using Microsoft.AspNetCore.SignalR;
-using Unstapp.API.Services;
-using Unstapp.Infrastructure.Entities;
-using Unstapp.API.Services.BackgroundServices;
 
 
 var builder = WebApplication.CreateBuilder(args);

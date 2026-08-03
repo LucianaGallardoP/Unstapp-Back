@@ -15,9 +15,7 @@
         }
         public static DateOnly GetArgentinaToday()
         {
-            var timeZone = GetArgentinaTimeZone();
-
-            var nowArgentina = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+            var nowArgentina = GetArgentinaNow();
 
             return DateOnly.FromDateTime(nowArgentina);
         }

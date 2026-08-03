@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Infrastructure.Interfaces;
@@ -41,18 +36,18 @@ namespace Unstapp.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<CalendarEventReminder>> GetDueRemindersAsync(DateOnly eventDate)
+        public async Task<List<CalendarEventReminder>> GetDueRemindersAsync(DateOnly maxEventDate)
         {
             var argentinaTimeZone = DateHelper.GetArgentinaTimeZone();
 
-            var argentinaNow = DateHelper.GetArgentinaNow();
+            var utcNow = DateTime.UtcNow;
 
-            var startArgentina = DateTime.SpecifyKind(
-                eventDate.ToDateTime(TimeOnly.MinValue),
+            var endArgentina = DateTime.SpecifyKind(
+                maxEventDate.AddDays(1).ToDateTime(TimeOnly.MinValue),
                 DateTimeKind.Unspecified
             );
 
-            var startUtc = TimeZoneInfo.ConvertTimeToUtc(startArgentina, argentinaTimeZone);
+            var endUtc = DateHelper.ConvertArgentinaLocalToUtc(endArgentina);
 
             return await _context.CalendarEventReminders
                 .Include(r => r.User)
@@ -61,8 +56,8 @@ namespace Unstapp.Infrastructure.Repositories
                     r.IsEnabled &&
                     r.SentAt == null &&
                     !r.CalendarEvent.IsDeleted &&
-                    r.CalendarEvent.StartDate < startUtc &&
-                    r.CalendarEvent.StartDate > argentinaNow
+                    r.CalendarEvent.StartDate >= utcNow &&
+                    r.CalendarEvent.StartDate < endUtc
                 )
                 .ToListAsync();
         }

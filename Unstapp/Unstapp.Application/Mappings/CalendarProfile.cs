@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Unstapp.Application.DTOs.Calendar;
 using Unstapp.Infrastructure.Entities;
 using Unstapp.Shared.Helpers;
