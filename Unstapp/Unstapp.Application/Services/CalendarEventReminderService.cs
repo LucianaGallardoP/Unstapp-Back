@@ -156,8 +156,20 @@ namespace Unstapp.Application.Services
 
                     appNotificationSent = true;
 
+                    _logger.LogInformation(
+                        "Evaluando WhatsApp para usuario {UserId}. WhatsAppNotificationsEnabled: {WhatsAppEnabled}. PhoneNumber: {PhoneNumber}",
+                        user.UserId,
+                        user.WhatsAppNotificationsEnabled,
+                        string.IsNullOrWhiteSpace(user.PhoneNumber) ? "VACIO" : "CARGADO"
+                    );
+
                     if (user.WhatsAppNotificationsEnabled && !string.IsNullOrWhiteSpace(user.PhoneNumber))
                     {
+                        _logger.LogInformation(
+                            "Intentando enviar WhatsApp de recordatorio al usuario {UserId}.",
+                            user.UserId
+                        );
+
                         var eventStartArgentina = DateHelper.ConvertUtcToArgentina(calendarEvent.StartDate);
 
                         whatsAppSent = await _whatsAppService.SendCalendarEventReminderTemplateAsync(
@@ -173,6 +185,21 @@ namespace Unstapp.Application.Services
                                     ? "-"
                                     : calendarEvent.Description
                             });
+
+                        _logger.LogInformation(
+                            "Resultado WhatsApp para usuario {UserId}: {WhatsAppSent}.",
+                            user.UserId,
+                            whatsAppSent
+                        );
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "No se envía WhatsApp al usuario {UserId}. WhatsAppNotificationsEnabled: {WhatsAppEnabled}. PhoneNumberExists: {PhoneNumberExists}.",
+                            user.UserId,
+                            user.WhatsAppNotificationsEnabled,
+                            !string.IsNullOrWhiteSpace(user.PhoneNumber)
+                        );
                     }
 
                     await _calendarEventReminderRepository.MarkAsSentAsync(reminder, appNotificationSent, whatsAppSent);
@@ -191,13 +218,6 @@ namespace Unstapp.Application.Services
                         await _calendarEventReminderRepository.MarkAsSentAsync(reminder, appNotificationSent, whatsAppSent);
                     }
                 }
-
-                await _notificationService.CreateCalendarEventReminderNotificationAsync(
-                    user.UserId,
-                    calendarEvent.CalendarEventId,
-                    calendarEvent.Title,
-                    calendarEvent.StartDate
-                );
             }
         }
     }
