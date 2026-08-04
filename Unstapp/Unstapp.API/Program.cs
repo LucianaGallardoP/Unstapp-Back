@@ -1,10 +1,13 @@
 using System.Text;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Unstapp.API.Handlers;
 using Unstapp.API.Hubs;
 using Unstapp.API.Services;
 using Unstapp.API.Services.BackgroundServices;
@@ -16,6 +19,7 @@ using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Infrastructure.Repositories;
 using Unstapp.Infrastructure.Services;
+using Unstapp.Shared.DTOs.Common;
 using Unstapp.Shared.Interfaces;
 
 
@@ -23,7 +27,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(e => e.Value?.Errors.Count > 0)
+                .SelectMany(e => e.Value!.Errors.Select(error => error.ErrorMessage))
+                .ToList();
+
+            var errorResponse = new ApiErrorResponse
+            {
+                StatusCode = StatusCodes.Status400BadRequest,
+                Code = "VALIDATION_ERROR",
+                Message = errors.Count > 0 ? string.Join(" ", errors) : "Hay errores de validación en la solicitud."
+            };
+
+            return new BadRequestObjectResult(errorResponse);
+        };
+    });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -115,6 +138,7 @@ builder.Services.AddHttpClient<IWhatsAppService, WhatsappService>();
 builder.Services.AddSingleton(cloudinary);
 builder.Services.AddSingleton<IWhatsAppNotificationDispatcher, WhatsAppNotificationDispatcher>();
 builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, CustomAuthorizationMiddlewareResultHandler>();
 builder.Services.AddScoped<IMediaStorageService, CloudinaryMediaStorageService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
