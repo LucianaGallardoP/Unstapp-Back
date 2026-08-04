@@ -44,7 +44,7 @@ namespace Unstapp.API.Controllers
             if (!result.Success)
                 return StatusCode(result.Error!.StatusCode, result.Error);
 
-            return Ok(result);
+            return Ok(result.Data);
         }
     }
 }
