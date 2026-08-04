@@ -11,7 +11,6 @@ namespace Unstapp.API.Controllers
     public class CarrerasController : ControllerBase
     {
         private readonly ICareerAdminService _careerService;
-
         public CarrerasController(ICareerAdminService careerService)
         {
             _careerService = careerService;
@@ -20,8 +19,12 @@ namespace Unstapp.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var careers = await _careerService.GetAllCareersAsync();
-            return Ok(careers);
+            var result = await _careerService.GetAllCareersAsync();
+
+            if(!result.Success)
+                return StatusCode(result.Error!.StatusCode, result.Error);
+
+            return Ok(result.Data);
         }
     }
 }
