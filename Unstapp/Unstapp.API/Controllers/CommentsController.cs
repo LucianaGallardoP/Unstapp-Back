@@ -44,7 +44,9 @@ namespace Unstapp.API.Controllers
                 return BadRequest(new ApiErrorResponse
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
-                    Code = moderationResult.Code,
+                    Code = string.IsNullOrWhiteSpace(moderationResult.Code)
+                        ? "CONTENT_NOT_ALLOWED"
+                        : moderationResult.Code,
                     Message = moderationResult.Message ?? "Tu comentario contiene lenguaje que infringe las normas de la comunidad."
                 });
 

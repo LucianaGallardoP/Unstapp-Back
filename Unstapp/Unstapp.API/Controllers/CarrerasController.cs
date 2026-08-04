@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 using Unstapp.Application.Interfaces;
 
 namespace Unstapp.API.Controllers
