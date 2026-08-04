@@ -71,7 +71,9 @@ namespace Unstapp.API.Controllers
                     return BadRequest(new ApiErrorResponse
                     {
                         StatusCode = StatusCodes.Status400BadRequest,
-                        Code = moderationResult.Code,
+                        Code = string.IsNullOrWhiteSpace(moderationResult.Code)
+                            ? "CONTENT_NOT_ALLOWED"
+                            : moderationResult.Code,
                         Message = moderationResult.Message ?? "Tu publicación contiene lenguaje que infringe las normas de la comunidad."
                     });
 
@@ -89,7 +91,12 @@ namespace Unstapp.API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiErrorResponse
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError,
+                    Code = "INTERNAL_SERVER_ERROR",
+                    Message = $"Ocurrió un error al crear la publicación: {ex.Message}"
+                });
             }
         }
 
