@@ -1,9 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using AutoMapper;
-using Azure;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Unstapp.Application.DTOs;
 using Unstapp.Application.DTOs.Auth;

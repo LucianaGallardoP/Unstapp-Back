@@ -83,7 +83,7 @@ namespace Unstapp.Application.Services
 
             var eventStartArgentina = DateHelper.ConvertUtcToArgentina(eventStartDate);
 
-            var message = $"Te recordamos: '{eventTitle}' el {eventStartArgentina:dd/MM/yyyy} a las {eventStartDate:HH:mm}.";
+            var message = $"Te recordamos: '{eventTitle}' el {eventStartArgentina:dd/MM/yyyy} a las {eventStartArgentina:HH:mm}.";
 
             var notification = new Notification
             {
