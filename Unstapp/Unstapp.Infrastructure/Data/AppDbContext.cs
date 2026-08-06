@@ -44,10 +44,10 @@ namespace Unstapp.Infrastructure.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(u => u.UserId);
-                entity.Property(u => u.Name).IsRequired();
-                entity.Property(u => u.LastName).IsRequired();
-                entity.Property(u => u.Email).IsRequired();
-                entity.Property(u => u.PhoneNumber).IsRequired();
+                entity.Property(u => u.Name).IsRequired().HasMaxLength(30);
+                entity.Property(u => u.LastName).IsRequired().HasMaxLength(30);
+                entity.Property(u => u.Email).IsRequired().HasMaxLength(100);
+                entity.Property(u => u.PhoneNumber).IsRequired().HasMaxLength(20);
                 entity.Property(u => u.Bio).HasMaxLength(500);
                 entity.Property(u => u.WhatsAppNotificationsEnabled).HasDefaultValue(false);
             });

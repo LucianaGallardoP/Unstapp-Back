@@ -11,7 +11,6 @@
         public string? Password { get; set; }
         public string? Bio { get; set; }
         public bool FirstTime { get; set; } = true;
-        public string? Biography { get; set; }
         public string? AvatarUrl { get; set; }
         public string? CoverUrl { get; set; }
         public bool WhatsAppNotificationsEnabled { get; set; } = false;
