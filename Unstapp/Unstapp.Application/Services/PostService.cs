@@ -280,19 +280,9 @@ namespace Unstapp.Application.Services
 
         private static PostCategory ResolvePostCategoryFromRoles(List<string> roles)
         {
-            if (roles.Any(r =>
-            r.Equals("Bar", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Fotocopiadora", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Biblioteca", StringComparison.OrdinalIgnoreCase)) ||
-            RoleHelper.IsAdmin(roles))
+            if (RoleHelper.IsAdmin(roles))
             {
                 return PostCategory.Administrativo;
-            }
-
-            if(roles.Any(r =>
-            r.Equals("Alumno", StringComparison.OrdinalIgnoreCase)) || RoleHelper.IsProffesor(roles))
-            {
-                return PostCategory.General;
             }
 
             return PostCategory.General;
