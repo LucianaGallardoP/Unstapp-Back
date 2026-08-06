@@ -48,32 +48,73 @@ namespace Unstapp.Application.Services
 
             var category = ResolvePostCategoryFromRoles(roles);
 
-            var canCreateImportantPost = RoleHelper.IsAdmin(roles) || RoleHelper.IsProffesor(roles);
+            var isAdmin = RoleHelper.IsAdmin(roles);
 
-            var isGeneralPost = category == PostCategory.General;
+            var isProfessor = RoleHelper.IsProffesor(roles);
+
+            var canCreateImportantPost = isAdmin || isProfessor;
+
+            if (dto.IsImportant && !canCreateImportantPost)
+                return ServiceResult<PostDto>.Fail(
+                    StatusCodes.Status403Forbidden,
+                    "IMPORTANT_POST_NOT_ALLOWED",
+                    "No tenés permisos para crear avisos importantes."
+                );
+
+            var requestedCareerIds = dto.CareerIds?.Distinct().ToList() ?? new List<int>();
+
+            if (requestedCareerIds.Any(id => id <= 0))
+                return ServiceResult<PostDto>.Fail(
+                    StatusCodes.Status400BadRequest,
+                    "INVALID_CAREER_ID",
+                    "Los identificadores de carrera no son válidos."
+                );
 
             var postCareerIds = new List<int>();
 
-            if (isGeneralPost)
+            if (category == PostCategory.General)
             {
                 var userCareerIds = await _userRepository.GetCareerIdsByUserIdAsync(userId);
 
-                postCareerIds = userCareerIds
-                    .Distinct()
-                    .ToList();
+                userCareerIds = userCareerIds.Distinct().ToList();
+
+                if (isProfessor && dto.IsImportant)
+                {
+                    if (userCareerIds.Count == 0)
+                        return ServiceResult<PostDto>.Fail(
+                            StatusCodes.Status400BadRequest,
+                            "TEACHER_WITHOUT_CAREERS",
+                            "El docente no tiene carreras asignadas."
+                        );
+
+                    if (requestedCareerIds.Count == 0)
+                    {
+                        postCareerIds = userCareerIds;
+                    }
+                    else
+                    {
+                        var unauthorizedCareerIds = requestedCareerIds.Except(userCareerIds).ToList();
+
+                        if (unauthorizedCareerIds.Count > 0)
+                        {
+                            return ServiceResult<PostDto>.Fail(
+                                StatusCodes.Status403Forbidden,
+                                "CAREER_NOT_ASSIGNED_TO_TEACHER",
+                                "No podés enviar el aviso a una carrera que no tenés asignada."
+                            );
+                        }
+
+                        postCareerIds = requestedCareerIds;
+                    }
+                }
+                else
+                {
+                    postCareerIds = userCareerIds;
+                }
             }
             else
             {
-                postCareerIds = dto.CareerIds?
-                    .Distinct()
-                    .ToList() ?? new List<int>();
-
-                if (postCareerIds.Any(id => id <= 0))
-                    return ServiceResult<PostDto>.Fail(
-                        StatusCodes.Status400BadRequest,
-                        "INVALID_CAREER_ID",
-                        "Los identificadores de carrera no son válidos."
-                    );
+                postCareerIds = requestedCareerIds;
 
                 if (postCareerIds.Count > 0)
                 {
@@ -91,6 +132,7 @@ namespace Unstapp.Application.Services
                         );
                 }
             }
+
             string? mediaUrl = null;
 
             if(dto.MediaFile != null)
