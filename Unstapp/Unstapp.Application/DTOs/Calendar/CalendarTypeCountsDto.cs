@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unstapp.Application.DTOs
+namespace Unstapp.Application.DTOs.Calendar
 {
     public class CalendarTypeCountsDto
     {

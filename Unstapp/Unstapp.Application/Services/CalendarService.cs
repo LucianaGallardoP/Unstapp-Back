@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
-using Unstapp.Application.DTOs;
 using Unstapp.Application.DTOs.Calendar;
 using Unstapp.Application.Interfaces;
 using Unstapp.Infrastructure.Entities;
@@ -108,6 +107,9 @@ namespace Unstapp.Application.Services
         {
             var roles = await _userRepository.GetRoleNameByUserIdAsync(currentUserId);
 
+            var isAdmin = RoleHelper.IsAdmin(roles);
+            var isProffesor = RoleHelper.IsProffesor(roles);
+
             var canCreateCalendarEvent = CanCreateCalendarEvent(roles, dto.Type);
 
             if (!canCreateCalendarEvent)
@@ -134,28 +136,64 @@ namespace Unstapp.Application.Services
             var startUtc = DateHelper.ConvertArgentinaLocalToUtc(dto.StartDate);
             var endUtc = DateHelper.ConvertArgentinaLocalToUtc(dto.EndDate);
 
-            var careerIds = dto.CareerIds?
-                .Where(id => id > 0)
-                .Distinct()
-                .ToList() ?? new List<int>();
 
-            if(dto.CareerIds != null && dto.CareerIds.Any(id => id <= 0))
+            var requestedCareerIds = dto.CareerIds.Distinct().ToList() ?? new List<int>();
+
+            if(requestedCareerIds.Any(id => id <= 0))
                 return ServiceResult<CalendarEventDto>.Fail(
                     StatusCodes.Status400BadRequest,
                     "INVALID_CAREER_ID",
-                    "Los identificadores de carrera no son válidos."
+                    "Los IDs de carrera no son válidos."
                 );
 
-            foreach(var careerId in careerIds)
-            {
-                var careerExists = await _careerRepository.CareerExistsAsync(careerId);
+            var eventCareerIds = new List<int>();
 
-                if(!careerExists)
+            if(isProffesor && !isAdmin)
+            {
+                var proffesorCareerIds = await _userRepository.GetCareerIdsByUserIdAsync(currentUserId);
+
+                proffesorCareerIds = proffesorCareerIds.Distinct().ToList();
+
+                if(proffesorCareerIds.Count == 0)
                     return ServiceResult<CalendarEventDto>.Fail(
-                        StatusCodes.Status404NotFound,
-                        "CAREER_NOT_FOUND",
-                        $"La carrera con ID {careerId} no existe."
+                        StatusCodes.Status400BadRequest,
+                        "TEACHER_WITHOUT_CAREERS",
+                        "El docente no tiene carreras asignadas."
                     );
+
+                if(requestedCareerIds.Count == 0)
+                {
+                    eventCareerIds = proffesorCareerIds;
+                }
+                else
+                {
+                    var unauthorizedCareerIds = requestedCareerIds.Except(proffesorCareerIds).ToList();
+
+                    if(unauthorizedCareerIds.Count > 0)
+                        return ServiceResult<CalendarEventDto>.Fail(
+                            StatusCodes.Status403Forbidden,
+                            "CAREER_NOT_ASSIGNED_TO_TEACHER",
+                            "No podés crear la clase para una carrera que no tenés asignada."
+                        );
+
+                    eventCareerIds = requestedCareerIds;
+                }
+            }
+            else
+            {
+                eventCareerIds = requestedCareerIds;
+
+                foreach(var careerId in eventCareerIds)
+                {
+                    var careerExists = await _careerRepository.CareerExistsAsync(careerId);
+
+                    if (!careerExists)
+                        return ServiceResult<CalendarEventDto>.Fail(
+                            StatusCodes.Status404NotFound,
+                            "CAREER_NOT_FOUND",
+                            $"La carrera con ID {careerId} no existe."
+                        );
+                }
             }
 
             var calendarEvent = new CalendarEvent
@@ -169,7 +207,7 @@ namespace Unstapp.Application.Services
                 CreatedAt = DateTime.UtcNow,
             };
 
-            await _calendarEventRepository.AddWithCareerAsync(calendarEvent, careerIds);
+            await _calendarEventRepository.AddWithCareerAsync(calendarEvent, eventCareerIds);
 
             var responseDto = _mapper.Map<CalendarEventDto>(calendarEvent);
             responseDto.ReminderEnabledForCurrentUser = false;
