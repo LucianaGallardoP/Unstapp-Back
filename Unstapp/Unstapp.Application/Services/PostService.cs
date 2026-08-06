@@ -173,9 +173,7 @@ namespace Unstapp.Application.Services
 
             var responseDto = _mapper.Map<PostDto>(createdPost);
 
-            responseDto.AuthorRoleName = ResolveDisplayRole(
-                createdPost.User.UserRoles.Select(ur => ur.Role.Name)
-            );
+            responseDto.AuthorRoleName = ResolveDisplayRole(roles);
 
             return ServiceResult<PostDto>.Ok(responseDto);
         }
@@ -209,8 +207,8 @@ namespace Unstapp.Application.Services
                     post.User.UserRoles.Select(Ur => Ur.Role.Name)
                 );
 
-                dto.LikesCount = post.Likes.Count();
-                dto.CommentsCount = post.Comments.Count();
+                dto.LikesCount = post.Likes.Count;
+                dto.CommentsCount = post.Comments.Count;
                 dto.isLikedByMe = post.Likes.Any(l => l.UserId == userId);
 
                 return dto;
@@ -237,6 +235,11 @@ namespace Unstapp.Application.Services
                     );
 
             var postDto = _mapper.Map<PostDto>(post);
+
+            postDto.AuthorRoleName = ResolveDisplayRole(
+                post.User.UserRoles.Select(ur => ur.Role.Name)
+            );
+
             postDto.isLikedByMe = post.Likes.Any(l => l.UserId == userId);
 
             return ServiceResult<PostDto>.Ok(postDto);
@@ -257,12 +260,7 @@ namespace Unstapp.Application.Services
 
             var roles = await _userRepository.GetRoleNameByUserIdAsync(currentUserId);
 
-            var isAdmin = roles.Any(r =>
-                r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
-                r.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
-                r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
-                r.Equals("Administrativo", StringComparison.OrdinalIgnoreCase)
-            );
+            var isAdmin = RoleHelper.IsAdmin(roles);
 
             var isOwner = post.UserId == currentUserId;
 
@@ -285,18 +283,14 @@ namespace Unstapp.Application.Services
             if (roles.Any(r =>
             r.Equals("Bar", StringComparison.OrdinalIgnoreCase) ||
             r.Equals("Fotocopiadora", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Biblioteca", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Administración", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Administrativo", StringComparison.OrdinalIgnoreCase)))
+            r.Equals("Biblioteca", StringComparison.OrdinalIgnoreCase)) ||
+            RoleHelper.IsAdmin(roles))
             {
                 return PostCategory.Administrativo;
             }
 
             if(roles.Any(r =>
-            r.Equals("Alumno", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Profesor", StringComparison.OrdinalIgnoreCase) ||
-            r.Equals("Docente", StringComparison.OrdinalIgnoreCase)))
+            r.Equals("Alumno", StringComparison.OrdinalIgnoreCase)) || RoleHelper.IsProffesor(roles))
             {
                 return PostCategory.General;
             }
@@ -323,8 +317,12 @@ namespace Unstapp.Application.Services
             {
                 var post = posts.First(p => p.PostId == postDto.PostId);
 
-                postDto.LikesCount = post.Likes.Count();
-                postDto.CommentsCount = post.Comments.Count();
+                postDto.AuthorRoleName = ResolveDisplayRole(
+                    post.User.UserRoles.Select(ur => ur.Role.Name)
+                );
+
+                postDto.LikesCount = post.Likes.Count;
+                postDto.CommentsCount = post.Comments.Count;
                 postDto.isLikedByMe = post.Likes.Any(l => l.UserId == userId);
             }
 
@@ -338,13 +336,10 @@ namespace Unstapp.Application.Services
                 .Select(r => r.Trim())
                 .ToList();
 
-            if (roleList.Any(r => r.Equals("Administracion", StringComparison.OrdinalIgnoreCase) ||
-                                  r.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
-                                  r.Equals("Admin", StringComparison.OrdinalIgnoreCase)))
+            if (RoleHelper.IsAdmin(roleList))
                 return "Administracion";
 
-            if (roleList.Any(r => r.Equals("Docente", StringComparison.OrdinalIgnoreCase) ||
-                             r.Equals("Profesor", StringComparison.OrdinalIgnoreCase)))
+            if (RoleHelper.IsProffesor(roleList))
                 return "Docente";
 
             if (roleList.Any(r => r.Equals("Alumno", StringComparison.OrdinalIgnoreCase)))

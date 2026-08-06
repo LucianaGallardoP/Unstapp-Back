@@ -27,12 +27,14 @@ namespace Unstapp.Infrastructure.Repositories
         public async Task<Post?> GetByIdWithRelationsAsync(int postId)
         {
             return await _context.Posts
-                .Where(p => !p.IsDeleted)
                 .Include(p => p.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
                 .Include(p => p.PostCareers)
-                .FirstOrDefaultAsync(p => p.PostId == postId);
+                    .ThenInclude(pc => pc.Career)
+                .FirstOrDefaultAsync(p => p.PostId == postId && !p.IsDeleted);
         }
 
         public async Task<List<Post>> GetAllWithRelationsAsync()
@@ -51,6 +53,8 @@ namespace Unstapp.Infrastructure.Repositories
             return await _context.Posts
                 .Where(p => p.UserId == userId && !p.IsDeleted)
                 .Include(p => p.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
                 .Include(p => p.Likes)
                 .Include(p => p.Comments)
                 .Include(p => p.PostCareers)
