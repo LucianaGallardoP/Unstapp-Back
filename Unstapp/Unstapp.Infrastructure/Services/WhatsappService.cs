@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Unstapp.Shared.DTOs.Whatsapp;
-using Unstapp.Shared.Interfaces;
-using System.Net.Http.Headers;
-
-using System.Net.Http.Json;
 using Unstapp.Shared.DTOs.WhatsApp;
-using Microsoft.AspNetCore.Http;
+using Unstapp.Shared.Interfaces;
 
 namespace Unstapp.Infrastructure.Services
 {

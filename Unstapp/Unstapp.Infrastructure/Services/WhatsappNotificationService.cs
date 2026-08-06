@@ -2,6 +2,7 @@
 using Unstapp.Infrastructure.DTOs.WhatsApp;
 using Unstapp.Infrastructure.Interfaces;
 using Unstapp.Shared.DTOs.Whatsapp;
+using Unstapp.Shared.Helpers;
 using Unstapp.Shared.Interfaces;
 
 namespace Unstapp.Infrastructure.Services
@@ -63,6 +64,13 @@ namespace Unstapp.Infrastructure.Services
                 return;
             }
             var destinationText = GetDestinationText(post);
+
+            var postDate = post.PostDate;
+
+            var argentinaDateText = DateHelper.ConvertUtcToArgentina(postDate);
+
+            var formattedArgentinaDateText = argentinaDateText.ToString("dd/MM/yyyy");
+
             foreach (var recipient in recipients)
             {
                 await _whatsAppService.SendImportantPostTemplateAsync(new WhatsAppTemplateMessageDto
@@ -72,7 +80,7 @@ namespace Unstapp.Infrastructure.Services
                     PostTitle = post.Content,
                     SenderName = post.SenderName,
                     Subject =  destinationText,
-                    DateText = post.PostDate.ToString("dd/MM/yyyy")
+                    DateText = formattedArgentinaDateText
                 });
             }
 
