@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Unstapp.Application.DTOs.Horarios;
 using Unstapp.Application.Interfaces;
 using Unstapp.Shared.DTOs.Common;
+using Unstapp.Shared.Helpers;
 
 namespace Unstapp.API.Controllers
 {
@@ -51,14 +52,13 @@ namespace Unstapp.API.Controllers
 
             if (careerId.HasValue && careerId.Value > 0)
             {
-
-                if (!User.IsInRole("Administracion"))
+                if (!User.IsInRole("Administracion") && !User.IsInRole("Docente"))
                     return StatusCode(StatusCodes.Status403Forbidden,
                         new ApiErrorResponse
                         {
                             StatusCode = StatusCodes.Status403Forbidden,
                             Code = "ACCESS_DENIED",
-                            Message = "Acceso denegado: Se requieren permisos de Administrador."
+                            Message = "Acceso denegado: Se requiere rol de Administracion o Docente."
                         }
                     );
 
