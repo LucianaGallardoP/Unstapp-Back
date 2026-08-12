@@ -13,7 +13,6 @@ using Unstapp.API.Services;
 using Unstapp.API.Services.BackgroundServices;
 using Unstapp.Application.Interfaces;
 using Unstapp.Application.Mappings;
-using Unstapp.Application.Seeding;
 using Unstapp.Application.Services;
 using Unstapp.Infrastructure.Data;
 using Unstapp.Infrastructure.Interfaces;
@@ -199,15 +198,6 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
-
-    if (app.Configuration.GetValue<bool>("SeedStudents"))
-    {
-        var seedLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
-            .CreateLogger("StudentSeeder");
-        var testStudentEmail = app.Configuration["Seed:TestStudentEmail"];
-        var testStudentDni = app.Configuration["Seed:TestStudentDni"];
-        await StudentSeeder.SeedAsync(db, seedLogger, testStudentEmail, testStudentDni);
-    }
 }
 
 // Configure the HTTP request pipeline.
