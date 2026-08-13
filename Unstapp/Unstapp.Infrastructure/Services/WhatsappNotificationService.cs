@@ -71,17 +71,49 @@ namespace Unstapp.Infrastructure.Services
 
             var formattedArgentinaDateText = argentinaDateText.ToString("dd/MM/yyyy");
 
+            _logger.LogInformation(
+                "Post {PostId}: se encontraron {Count} destinatarios para WhatsApp.",
+                postId,
+                recipients.Count
+            );
+
             foreach (var recipient in recipients)
             {
-                await _whatsAppService.SendImportantPostTemplateAsync(new WhatsAppTemplateMessageDto
+                try
                 {
-                    ToPhoneNumber = recipient.PhoneNumber,
-                    StudentName = recipient.FullName,
-                    PostTitle = post.Content,
-                    SenderName = post.SenderName,
-                    Subject =  destinationText,
-                    DateText = formattedArgentinaDateText
-                });
+                    _logger.LogInformation(
+                        "Intentando enviar WhatsApp a {Name} - {Phone}",
+                        recipient.FullName,
+                        recipient.PhoneNumber
+                    );
+
+                    await _whatsAppService.SendImportantPostTemplateAsync(
+                        new WhatsAppTemplateMessageDto
+                        {
+                            ToPhoneNumber = recipient.PhoneNumber,
+                            StudentName = recipient.FullName,
+                            PostTitle = post.Content,
+                            SenderName = post.SenderName,
+                            Subject = destinationText,
+                            DateText = formattedArgentinaDateText
+                        }
+                    );
+
+                    _logger.LogInformation(
+                        "WhatsApp aceptado para {Name} - {Phone}",
+                        recipient.FullName,
+                        recipient.PhoneNumber
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "ERROR enviando WhatsApp a {Name} - {Phone}",
+                        recipient.FullName,
+                        recipient.PhoneNumber
+                    );
+                }
             }
 
             _logger.LogInformation(
